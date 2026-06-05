@@ -1,0 +1,98 @@
+import { Loader2, Bot, User, Phone, Package, Clock, CheckCircle2, UserCheck } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+
+export default function ChatHeader({
+  activeUserData,
+  isTakenOver,
+  isWindowExpired,
+  releasing,
+  takingOver,
+  resolvingAgent,
+  showProfile,
+  onTakeover,
+  onRelease,
+  onResolveAgent,
+  onToggleProfile,
+}) {
+  if (!activeUserData) {
+    return (
+      <div className="h-16 border-b bg-card/95 backdrop-blur z-10 shrink-0 flex items-center px-4">
+        <h2 className="text-sm font-semibold text-muted-foreground">Select a chat to view</h2>
+      </div>
+    )
+  }
+
+  return (
+    <div className="h-16 px-4 py-3 flex items-center justify-between border-b bg-card/95 backdrop-blur shadow-sm z-10 shrink-0">
+      <div className="flex items-center gap-3">
+        <div className="h-10 w-10 rounded-full bg-[#C9A84C]/10 flex items-center justify-center shrink-0 border border-[#C9A84C]/20">
+          <User className="h-5 w-5 text-[#C9A84C]" />
+        </div>
+        <div>
+          <h2 className="text-sm font-bold">{activeUserData.username || 'Unknown User'}</h2>
+          <p className="text-xs text-muted-foreground font-mono flex items-center gap-1">
+            <Phone className="h-3 w-3" /> +{activeUserData.phone_number}
+          </p>
+        </div>
+
+        {isWindowExpired ? (
+          <span className="hidden sm:inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-800 px-2 py-0.5 text-[10px] font-medium text-red-600 dark:text-red-400">
+            <Clock className="h-3 w-3" /> Window Closed
+          </span>
+        ) : (
+          <span className="hidden sm:inline-flex items-center gap-1 rounded-full border border-[#C9A84C]/30 bg-[#C9A84C]/10 px-2 py-0.5 text-[10px] font-medium text-[#C9A84C]">
+            <CheckCircle2 className="h-3 w-3" /> Window Open
+          </span>
+        )}
+      </div>
+
+      <div className="flex items-center gap-2">
+        {activeUserData.live_agent_required && (
+          <Button
+            size="sm" variant="outline"
+            className="h-8 text-xs border-yellow-400 text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-950/30"
+            onClick={onResolveAgent} disabled={resolvingAgent}
+          >
+            {resolvingAgent
+              ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+              : <UserCheck className="h-3.5 w-3.5 mr-1" />}
+            Resolve Agent
+          </Button>
+        )}
+        {isTakenOver ? (
+          <Button
+            size="sm" variant="outline"
+            className="h-8 text-xs border-amber-500 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+            onClick={onRelease} disabled={releasing}
+          >
+            {releasing
+              ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+              : <Bot className="h-3.5 w-3.5 mr-1" />}
+            Hand Back to Bot
+          </Button>
+        ) : (
+          <Button
+            size="sm" variant="outline"
+            className="h-8 text-xs"
+            onClick={onTakeover} disabled={takingOver || isWindowExpired}
+            title={isWindowExpired ? '24-hour messaging window has closed' : undefined}
+          >
+            {takingOver
+              ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+              : <User className="h-3.5 w-3.5 mr-1" />}
+            Take Over
+          </Button>
+        )}
+
+        <Button
+          variant="ghost" size="icon"
+          className={`h-8 w-8 ${showProfile ? 'text-primary bg-primary/10' : 'text-muted-foreground'}`}
+          onClick={onToggleProfile}
+          title="User Profile"
+        >
+          <Package className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  )
+}
