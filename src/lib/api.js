@@ -86,7 +86,12 @@ export const listUsers = (page = 1, limit = 20, agentRequested = false) => {
   q.set('page', String(page))
   q.set('limit', String(limit))
   if (agentRequested) q.set('agent_requested', 'true')
-  return api(`/system/user?${q.toString()}`)
+  return api(`/system/user?${q.toString()}`).then(res => ({
+    users: res?.results ?? res?.users ?? [],
+    total: res?.total ?? 0,
+    page: res?.page,
+    limit: res?.limit,
+  }))
 }
 
 export const searchUsers = (query, limit = 20) => {

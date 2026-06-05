@@ -110,7 +110,7 @@ export default function UsersPage() {
   const fetchUsers = useCallback(() => {
     const req = debouncedSearch
       ? searchUsers(debouncedSearch).then(res => ({ users: res?.results || [], total: res?.count ?? 0 }))
-      : listUsers(page, limit, agentFilter).then(res => ({ users: res?.users || [], total: res?.total ?? 0 }))
+      : listUsers(page, limit, agentFilter).then(res => ({ users: res.users, total: res.total }))
     req
       .then(({ users, total }) => { setUsers(users); setTotal(total) })
       .catch(() => {})

@@ -289,7 +289,8 @@ export default function Overview() {
   const [stats, setStats] = useState(null)
   const [userGrowth, setUserGrowth] = useState(null)
   const [storeVisitGrowth, setStoreVisitGrowth] = useState(null)
-  const [growthUnavailable, setGrowthUnavailable] = useState(false)
+  const [userGrowthUnavailable, setUserGrowthUnavailable] = useState(false)
+  const [storeGrowthUnavailable, setStoreGrowthUnavailable] = useState(false)
   const [loading, setLoading] = useState(true)
   const [lastSync, setLastSync] = useState(null)
   const intervalRef = useRef(null)
@@ -308,20 +309,16 @@ export default function Overview() {
       setStats(statsData)
       setLastSync(new Date())
 
-      if (userGrowthRes?.data && storeGrowthRes?.data) {
-        setUserGrowth(userGrowthRes.data)
-        setStoreVisitGrowth(storeGrowthRes.data)
-        setGrowthUnavailable(false)
-      } else {
-        setUserGrowth(null)
-        setStoreVisitGrowth(null)
-        setGrowthUnavailable(true)
-      }
+      setUserGrowth(userGrowthRes?.data ?? null)
+      setStoreVisitGrowth(storeGrowthRes?.data ?? null)
+      setUserGrowthUnavailable(userGrowthRes == null)
+      setStoreGrowthUnavailable(storeGrowthRes == null)
     } catch {
       setStats(null)
       setUserGrowth(null)
       setStoreVisitGrowth(null)
-      setGrowthUnavailable(true)
+      setUserGrowthUnavailable(true)
+      setStoreGrowthUnavailable(true)
     } finally {
       setLoading(false)
     }
@@ -371,10 +368,10 @@ export default function Overview() {
         <StatCard label="AI Response Time" description="Average across all messages" icon={Zap} color="bg-orange-100 text-orange-600" count={loading ? null : formatResponseTime(stats?.avg_ai_response_time_ms)} loading={loading} />
         <RatingsCard ratings={stats?.ratings} loading={loading} />
         <div className="col-span-full">
-          <GrowthCard title="User Growth" icon={Users} iconBg="bg-[#C9A84C]/15 text-[#C9A84C]" barColor="#C9A84C" data={userGrowth} loading={loading} unavailable={growthUnavailable} />
+          <GrowthCard title="User Growth" icon={Users} iconBg="bg-[#C9A84C]/15 text-[#C9A84C]" barColor="#C9A84C" data={userGrowth} loading={loading} unavailable={userGrowthUnavailable} />
         </div>
         <div className="col-span-full">
-          <GrowthCard title="Store Visit Growth" icon={Store} iconBg="bg-purple-100 text-purple-600" barColor="#a855f7" data={storeVisitGrowth} loading={loading} unavailable={growthUnavailable} />
+          <GrowthCard title="Store Visit Growth" icon={Store} iconBg="bg-purple-100 text-purple-600" barColor="#a855f7" data={storeVisitGrowth} loading={loading} unavailable={storeGrowthUnavailable} />
         </div>
       </div>
     </div>
