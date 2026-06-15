@@ -3,6 +3,7 @@ import notificationSound from '@/assets/notification_sound.mp3'
 import { useSearchParams } from 'react-router-dom'
 import { listUsers, searchUsers, getUserByPhone, takeoverConversation, sendAgentMessage, releaseConversation, resolveAgentRequest, getToken } from '@/lib/api'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 import { isWindowExpired as checkWindowExpired } from './utils'
 import ConversationSidebar from './ConversationSidebar'
 import ChatHeader from './ChatHeader'
@@ -10,6 +11,21 @@ import ChatMessages from './ChatMessages'
 import AgentFooter from './AgentFooter'
 import UserProfilePanel from './UserProfilePanel'
 import { Badge } from '@/components/ui/badge'
+import { Sheet, SheetContent } from '@/components/ui/sheet'
+
+function useMediaQuery(query) {
+  const [matches, setMatches] = useState(false)
+
+  useEffect(() => {
+    const mql = window.matchMedia(query)
+    const onChange = () => setMatches(mql.matches)
+    mql.addEventListener('change', onChange)
+    setMatches(mql.matches)
+    return () => mql.removeEventListener('change', onChange)
+  }, [query])
+
+  return matches
+}
 
 function hasJewelleryProfile(profile) {
   if (!profile || typeof profile !== 'object') return false
@@ -350,11 +366,24 @@ export default function UsersPage() {
     }
   }
 
+  const isXl = useMediaQuery('(min-width: 1280px)')
+
+  const handleBackToList = useCallback(() => {
+    setActivePhone(null)
+    setShowProfile(false)
+    setSearchParams(prev => {
+      const p = new URLSearchParams(prev)
+      p.delete('phone')
+      return p
+    }, { replace: true })
+  }, [setSearchParams])
+
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
-      <div className="flex bg-card rounded-xl border border-border shadow-sm overflow-hidden h-full min-h-0">
+    <div className="flex flex-1 flex-col min-h-0 basis-0 overflow-hidden">
+      <div className="flex flex-1 min-h-0 basis-0 overflow-hidden bg-card md:rounded-xl border border-border shadow-sm">
 
         <ConversationSidebar
+          className={activePhone ? 'hidden lg:flex' : 'flex'}
           users={filteredUsers}
           loadingUsers={loadingUsers}
           activePhone={activePhone}
@@ -370,7 +399,10 @@ export default function UsersPage() {
         />
 
         {/* Chat pane */}
-        <div className="flex-1 flex flex-col bg-[url('https://ik.imagekit.io/0rf6agnve/one%20reside/chat-bg-light.png')] dark:bg-[url('https://ik.imagekit.io/0rf6agnve/one%20reside/chat-bg-dark.png')] bg-cover bg-center">
+        <div className={cn(
+          "flex-1 min-w-0 min-h-0 basis-0 flex flex-col overflow-hidden bg-[url('https://ik.imagekit.io/0rf6agnve/one%20reside/chat-bg-light.png')] dark:bg-[url('https://ik.imagekit.io/0rf6agnve/one%20reside/chat-bg-dark.png')] bg-cover bg-center",
+          !activePhone && 'hidden lg:flex'
+        )}>
 
           <ChatHeader
             activeUserData={activeUserData}
@@ -384,6 +416,7 @@ export default function UsersPage() {
             onRelease={handleRelease}
             onResolveAgent={handleResolveAgent}
             onToggleProfile={() => setShowProfile(p => !p)}
+            onBack={handleBackToList}
           />
 
           {/* Jewellery Profile Banner */}
@@ -430,7 +463,7 @@ export default function UsersPage() {
           )}
         </div>
 
-        {showProfile && activeUserData && (
+        {showProfile && activeUserData && isXl && (
           <UserProfilePanel
             userData={activeUserData}
             onClose={() => setShowProfile(false)}
@@ -438,6 +471,17 @@ export default function UsersPage() {
         )}
 
       </div>
+
+      <Sheet open={showProfile && !!activeUserData && !isXl} onOpenChange={setShowProfile}>
+        <SheetContent side="right" className="w-80 p-0 sm:max-w-80 [&>button]:hidden">
+          {activeUserData && (
+            <UserProfilePanel
+              userData={activeUserData}
+              onClose={() => setShowProfile(false)}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }

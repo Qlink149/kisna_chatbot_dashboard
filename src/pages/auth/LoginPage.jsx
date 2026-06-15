@@ -29,7 +29,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 bg-white">
+    <div className="min-h-svh overflow-y-auto grid grid-cols-1 md:grid-cols-2 bg-white">
       {/* Brand Side */}
       <div className="hidden md:flex flex-col justify-between bg-[#0F172A] text-white p-12 lg:p-20 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#C9A84C]/10 rounded-full blur-[100px] translate-x-1/3 -translate-y-1/3" />

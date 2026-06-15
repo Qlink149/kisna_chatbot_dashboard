@@ -40,7 +40,7 @@ function PeriodFilter({ period, onFilter }) {
 
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="flex items-center gap-1.5 opacity-50 cursor-not-allowed">
+          <div className="hidden md:flex items-center gap-1.5 opacity-50 cursor-not-allowed">
             <input
               type="date"
               disabled
@@ -111,7 +111,7 @@ function RatingsCard({ ratings, loading }) {
           {loading ? <Skeleton className="h-3 w-28" /> : ratings ? `${ratings.total_ratings} ratings on human agents` : 'No ratings yet'}
         </div>
         {!loading && ratings?.breakdown && (
-          <div className="mt-3 flex gap-3 text-xs font-medium">
+          <div className="mt-3 flex flex-wrap gap-3 text-xs font-medium">
             <span className="text-green-600">{ratings.breakdown.excellent} excellent</span>
             <span className="text-amber-500">{ratings.breakdown.average} average</span>
             <span className="text-red-500">{ratings.breakdown.poor} poor</span>
@@ -238,7 +238,7 @@ function GrowthCard({ title, icon: Icon, iconBg, barColor, data, loading, unavai
   const up = (trendPct ?? 0) >= 0
 
   return (
-    <div className="rounded-xl border bg-card p-5 flex gap-6 items-start">
+    <div className="rounded-xl border bg-card p-5 flex flex-col md:flex-row gap-6 items-start">
       <div className="w-44 shrink-0">
         <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', iconBg)}>
           <Icon className="h-5 w-5" />

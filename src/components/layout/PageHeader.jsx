@@ -1,6 +1,6 @@
 export function PageHeader({ title, description, action }) {
   return (
-    <div className="flex items-start justify-between pb-4 border-b mb-5">
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between pb-4 border-b mb-5">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
         {description && (
@@ -8,7 +8,7 @@ export function PageHeader({ title, description, action }) {
         )}
       </div>
       {action && (
-        <div className="ml-4 shrink-0">{action}</div>
+        <div className="w-full sm:w-auto sm:ml-4 shrink-0">{action}</div>
       )}
     </div>
   )

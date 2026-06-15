@@ -1,4 +1,4 @@
-import { Loader2, Bot, User, Phone, Package, Clock, CheckCircle2, UserCheck } from 'lucide-react'
+import { Loader2, Bot, User, Phone, Package, Clock, CheckCircle2, UserCheck, ChevronLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export default function ChatHeader({
@@ -13,6 +13,7 @@ export default function ChatHeader({
   onRelease,
   onResolveAgent,
   onToggleProfile,
+  onBack,
 }) {
   if (!activeUserData) {
     return (
@@ -23,30 +24,41 @@ export default function ChatHeader({
   }
 
   return (
-    <div className="h-16 px-4 py-3 flex items-center justify-between border-b bg-card/95 backdrop-blur shadow-sm z-10 shrink-0">
-      <div className="flex items-center gap-3">
+    <div className="h-16 px-4 py-3 flex items-center justify-between gap-2 border-b bg-card/95 backdrop-blur shadow-sm z-10 shrink-0">
+      <div className="flex items-center gap-3 min-w-0">
+        {onBack && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0 lg:hidden"
+            onClick={onBack}
+            title="Back to conversations"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+        )}
         <div className="h-10 w-10 rounded-full bg-[#C9A84C]/10 flex items-center justify-center shrink-0 border border-[#C9A84C]/20">
           <User className="h-5 w-5 text-[#C9A84C]" />
         </div>
-        <div>
-          <h2 className="text-sm font-bold">{activeUserData.username || 'Unknown User'}</h2>
-          <p className="text-xs text-muted-foreground font-mono flex items-center gap-1">
-            <Phone className="h-3 w-3" /> +{activeUserData.phone_number}
+        <div className="min-w-0">
+          <h2 className="text-sm font-bold truncate">{activeUserData.username || 'Unknown User'}</h2>
+          <p className="text-xs text-muted-foreground font-mono flex items-center gap-1 truncate">
+            <Phone className="h-3 w-3 shrink-0" /> +{activeUserData.phone_number}
           </p>
         </div>
 
         {isWindowExpired ? (
-          <span className="hidden sm:inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-800 px-2 py-0.5 text-[10px] font-medium text-red-600 dark:text-red-400">
+          <span className="hidden sm:inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-800 px-2 py-0.5 text-[10px] font-medium text-red-600 dark:text-red-400 shrink-0">
             <Clock className="h-3 w-3" /> Window Closed
           </span>
         ) : (
-          <span className="hidden sm:inline-flex items-center gap-1 rounded-full border border-[#C9A84C]/30 bg-[#C9A84C]/10 px-2 py-0.5 text-[10px] font-medium text-[#C9A84C]">
+          <span className="hidden sm:inline-flex items-center gap-1 rounded-full border border-[#C9A84C]/30 bg-[#C9A84C]/10 px-2 py-0.5 text-[10px] font-medium text-[#C9A84C] shrink-0">
             <CheckCircle2 className="h-3 w-3" /> Window Open
           </span>
         )}
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-1 shrink-0">
         {activeUserData.live_agent_required && (
           <Button
             size="sm" variant="outline"

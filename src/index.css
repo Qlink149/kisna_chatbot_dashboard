@@ -121,6 +121,9 @@
   * {
     @apply border-border outline-ring/50;
     }
+  html, body, #root {
+    @apply h-svh max-h-svh w-full overflow-hidden;
+    }
   body {
     @apply bg-background text-foreground;
     }

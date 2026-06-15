@@ -25,7 +25,7 @@ export default function UserProfilePanel({ userData, onClose }) {
   const showProfile = hasJewelleryProfile(jewelleryProfile)
 
   return (
-    <div className="w-80 border-l flex flex-col bg-card overflow-hidden shrink-0">
+    <div className="w-80 border-l flex flex-col min-h-0 bg-card overflow-hidden shrink-0">
       <div className="h-16 px-4 flex items-center justify-between border-b shrink-0">
         <h3 className="text-sm font-bold">User Details</h3>
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
@@ -33,7 +33,7 @@ export default function UserProfilePanel({ userData, onClose }) {
         </Button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+      <div className="flex-1 overflow-y-auto min-h-0 overscroll-y-contain p-4 space-y-6">
         {/* Avatar & Name */}
         <div className="flex flex-col items-center text-center pb-4 border-b">
           <div className="h-20 w-20 rounded-full bg-gradient-to-br from-[#C9A84C]/20 to-[#C9A84C]/30 flex items-center justify-center mb-3 border-2 border-[#C9A84C]/20">

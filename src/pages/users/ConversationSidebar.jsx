@@ -1,6 +1,7 @@
 import { Search, User, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { cn } from '@/lib/utils'
 import { safeFormatDate, isWindowExpired } from './utils'
 
 export default function ConversationSidebar({
@@ -16,10 +17,11 @@ export default function ConversationSidebar({
   onSelectUser,
   agentFilter,
   onFilterChange,
+  className,
 }) {
   return (
-    <div className="w-80 border-r flex flex-col bg-background/50">
-      <div className="p-4 border-b bg-card">
+    <div className={cn('w-full lg:w-80 shrink-0 min-h-0 overflow-hidden border-r flex flex-col bg-background/50', className)}>
+      <div className="p-4 border-b bg-card shrink-0">
         <h1 className="text-xl font-bold tracking-tight mb-4">Conversations</h1>
         <div className="relative">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -54,7 +56,7 @@ export default function ConversationSidebar({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto min-h-0">
+      <div className="flex-1 min-h-0 basis-0 overflow-y-auto overscroll-y-contain">
         {loadingUsers ? (
           <div className="p-4 flex justify-center text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" />

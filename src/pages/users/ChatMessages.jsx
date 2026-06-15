@@ -1,19 +1,42 @@
 import { Loader2, Sparkles, User, MessageSquare, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 function formatMsgTime(ts) {
   if (!ts) return null
   return new Date(ts * 1000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
 }
 
-function renderMessageContent(content) {
-  if (!content) return null
-  const parts = content.split(/(\[.*?\])/g)
+const URL_RE = /(https?:\/\/[^\s]+)/g
+
+function renderBracketHighlight(text, keyPrefix) {
+  const parts = text.split(/(\[.*?\])/g)
   return parts.map((part, i) => {
     if (part.startsWith('[') && part.endsWith(']')) {
-      return <span key={i} className="font-semibold text-primary">{part}</span>
+      return <span key={`${keyPrefix}-b-${i}`} className="font-semibold text-primary">{part}</span>
     }
-    return <span key={i}>{part}</span>
+    return part ? <span key={`${keyPrefix}-t-${i}`}>{part}</span> : null
+  })
+}
+
+function renderMessageContent(content) {
+  if (!content) return null
+  const segments = content.split(URL_RE)
+  return segments.map((segment, i) => {
+    if (segment.startsWith('http://') || segment.startsWith('https://')) {
+      return (
+        <a
+          key={`url-${i}`}
+          href={segment}
+          target="_blank"
+          rel="noreferrer"
+          className="break-all underline text-primary hover:opacity-80"
+        >
+          {segment}
+        </a>
+      )
+    }
+    return renderBracketHighlight(segment, `seg-${i}`)
   })
 }
 
@@ -30,7 +53,7 @@ export default function ChatMessages({
     <div
       ref={scrollRef}
       onScroll={onScroll}
-      className="flex-1 overflow-y-auto p-4 space-y-4 relative"
+      className="flex-1 min-h-0 basis-0 overflow-y-auto overflow-x-hidden overscroll-y-contain p-4 space-y-4 relative"
     >
       {!activePhone ? (
         <div className="h-full flex flex-col items-center justify-center text-center p-8">
@@ -56,9 +79,12 @@ export default function ChatMessages({
           </p>
         </div>
       ) : (
-        <div className="relative pb-10 space-y-4">
+        <div className="relative pb-10 space-y-4 min-w-0">
           {chatHistory.map((msg, i) => (
-            <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div
+              key={i}
+              className={cn('flex w-full min-w-0', msg.role === 'user' ? 'justify-end' : 'justify-start')}
+            >
               {msg.role === 'assistant' && (
                 <div className="h-7 w-7 rounded-full bg-gradient-to-br from-indigo-500/20 to-violet-500/10 flex items-center justify-center shrink-0 mr-2 mt-1 shadow-sm border border-indigo-500/10">
                   <Sparkles className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
@@ -72,20 +98,21 @@ export default function ChatMessages({
               )}
 
               <div
-                className={`relative max-w-[75%] px-3.5 py-2.5 rounded-2xl shadow-sm text-sm ${
+                className={cn(
+                  'relative w-fit max-w-[75%] min-w-0 shrink px-3.5 py-2.5 rounded-2xl shadow-sm text-sm',
                   msg.role === 'user'
                     ? 'bg-[#d9fdd3] dark:bg-[#005c4b] text-[#111b21] dark:text-[#e9edef] rounded-tr-none'
                     : msg.role === 'agent'
                     ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-100 rounded-tl-none border border-amber-200 dark:border-amber-800'
                     : 'bg-white dark:bg-[#202c33] text-[#111b21] dark:text-[#e9edef] rounded-tl-none border border-border/50'
-                }`}
+                )}
               >
                 {msg.role === 'agent' && (
                   <p className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 mb-1 uppercase tracking-wider">
                     Live Agent
                   </p>
                 )}
-                <div className="whitespace-pre-wrap leading-relaxed">
+                <div className="whitespace-pre-wrap break-words leading-relaxed [overflow-wrap:anywhere]">
                   {renderMessageContent(msg.content)}
                 </div>
                 <p className="text-[9px] text-right mt-1 opacity-80 select-none">
