@@ -96,14 +96,25 @@ export default function UserProfilePanel({ userData, onClose }) {
             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
               Last Viewed Product
             </p>
-            <div className="rounded-lg border bg-muted/30 p-3 space-y-1">
-              <p className="text-sm font-semibold leading-snug">{lastViewed.title}</p>
-              {formatPrice(lastViewed.price) && (
-                <p className="text-xs text-muted-foreground">{formatPrice(lastViewed.price)}</p>
+            <div className="rounded-lg border bg-muted/30 p-3 flex gap-3 items-center">
+              {(lastViewed.image_url_snapshot || lastViewed.mediaUrl || lastViewed.image_url || (lastViewed.images && lastViewed.images[0])) && (
+                <div className="shrink-0">
+                  <img
+                    src={lastViewed.image_url_snapshot || lastViewed.mediaUrl || lastViewed.image_url || (lastViewed.images && lastViewed.images[0])}
+                    alt={lastViewed.title}
+                    className="w-12 h-12 rounded-md object-cover border bg-background"
+                  />
+                </div>
               )}
-              {lastViewed.materialType && !formatPrice(lastViewed.price) && (
-                <p className="text-xs text-muted-foreground capitalize">{lastViewed.materialType}</p>
-              )}
+              <div className="space-y-1">
+                <p className="text-sm font-semibold leading-snug">{lastViewed.title}</p>
+                {formatPrice(lastViewed.price) && (
+                  <p className="text-xs text-muted-foreground">{formatPrice(lastViewed.price)}</p>
+                )}
+                {lastViewed.materialType && (
+                  <p className="text-xs text-muted-foreground capitalize">{lastViewed.materialType}</p>
+                )}
+              </div>
             </div>
           </div>
         )}
