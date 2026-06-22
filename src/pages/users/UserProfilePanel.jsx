@@ -15,6 +15,12 @@ function hasJewelleryProfile(profile) {
 
 function formatPrice(price) {
   if (price == null || price === '') return null
+  if (typeof price === 'object') {
+    if (price.display_price != null) price = price.display_price
+    else if (price.variantPrice != null) price = price.variantPrice
+    else if (price.finalPrice != null) price = price.finalPrice
+    else return null
+  }
   if (typeof price === 'number') return `₹${price.toLocaleString('en-IN')}`
   return String(price)
 }
