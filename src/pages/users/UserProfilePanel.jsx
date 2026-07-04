@@ -42,8 +42,14 @@ export default function UserProfilePanel({ userData, onClose }) {
       <div className="flex-1 overflow-y-auto min-h-0 overscroll-y-contain p-4 space-y-6">
         {/* Avatar & Name */}
         <div className="flex flex-col items-center text-center pb-4 border-b">
-          <div className="h-20 w-20 rounded-full bg-gradient-to-br from-[#C9A84C]/20 to-[#C9A84C]/30 flex items-center justify-center mb-3 border-2 border-[#C9A84C]/20">
-            <User className="h-10 w-10 text-[#C9A84C]" />
+          <div
+            className="h-20 w-20 rounded-full flex items-center justify-center mb-3 border-2"
+            style={{
+              background: 'linear-gradient(to bottom right, rgb(var(--violet-rgb) / 0.15), rgb(var(--royal-rgb) / 0.12))',
+              borderColor: 'rgb(var(--violet-rgb) / 0.18)',
+            }}
+          >
+            <User className="h-10 w-10" style={{ color: 'var(--violet)' }} />
           </div>
           <h4 className="text-base font-bold">{userData.username || 'Unknown User'}</h4>
           <p className="text-xs text-muted-foreground font-mono mt-1">+{userData.phone_number}</p>

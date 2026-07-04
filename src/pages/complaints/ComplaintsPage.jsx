@@ -100,18 +100,18 @@ export default function ComplaintsPage() {
         description={`${total} total complaint${total !== 1 ? 's' : ''} filed through WhatsApp`}
       />
 
-      <div className="rounded-xl border bg-card overflow-hidden">
+      <div className="executive-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="dashboard-table w-full text-sm">
             <thead>
-              <tr className="border-b bg-muted/40">
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Customer</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Order ID</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Case ID</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Type</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Description</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Filed</th>
+              <tr className="border-b bg-[rgb(var(--mist-rgb)/0.6)]">
+                <th className="px-4 py-3 text-left text-xs uppercase tracking-wider">Customer</th>
+                <th className="px-4 py-3 text-left text-xs uppercase tracking-wider">Order ID</th>
+                <th className="px-4 py-3 text-left text-xs uppercase tracking-wider">Case ID</th>
+                <th className="px-4 py-3 text-left text-xs uppercase tracking-wider">Type</th>
+                <th className="px-4 py-3 text-left text-xs uppercase tracking-wider">Status</th>
+                <th className="px-4 py-3 text-left text-xs uppercase tracking-wider">Description</th>
+                <th className="px-4 py-3 text-left text-xs uppercase tracking-wider">Filed</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
@@ -120,13 +120,13 @@ export default function ComplaintsPage() {
               ) : complaints.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-16 text-center text-muted-foreground">
-                    <AlertTriangle className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                    <AlertTriangle className="h-8 w-8 mx-auto mb-2 opacity-40" />
                     No complaints found.
                   </td>
                 </tr>
               ) : (
                 complaints.map((c, i) => (
-                  <tr key={c.case_id || c.case_no || i} className="hover:bg-muted/30 transition-colors">
+                  <tr key={c.case_id || c.case_no || i} className="hover:bg-[rgb(var(--violet-rgb)/0.04)] transition-colors">
                     <td className="px-4 py-3">
                       <Link
                         to={`/users?phone=${c.phone_number}`}
@@ -135,13 +135,13 @@ export default function ComplaintsPage() {
                         <p className="font-medium text-foreground group-hover:text-primary transition-colors">
                           {c.customer_name || c.username || 'Unknown'}
                         </p>
-                        <p className="text-[11px] text-muted-foreground font-mono">+{c.phone_number}</p>
+                        <p className="text-[11px] cell-muted font-mono">+{c.phone_number}</p>
                       </Link>
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                    <td className="px-4 py-3 font-mono text-xs cell-muted">
                       {c.order_id || '—'}
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                    <td className="px-4 py-3 font-mono text-xs cell-muted">
                       {c.case_id || c.case_no || '—'}
                     </td>
                     <td className="px-4 py-3">
@@ -151,9 +151,9 @@ export default function ComplaintsPage() {
                       <StatusBadge status={c.status} />
                     </td>
                     <td className="px-4 py-3 max-w-xs">
-                      <p className="text-xs text-muted-foreground line-clamp-2">{c.issue || c.issue_description || '—'}</p>
+                      <p className="text-xs cell-muted line-clamp-2">{c.issue || c.issue_description || '—'}</p>
                     </td>
-                    <td className="px-4 py-3 text-[11px] text-muted-foreground whitespace-nowrap">
+                    <td className="px-4 py-3 text-[11px] cell-muted whitespace-nowrap">
                       {safeFormatDate(c.created_at)}
                     </td>
                   </tr>
@@ -163,14 +163,14 @@ export default function ComplaintsPage() {
           </table>
         </div>
 
-        <div className="border-t bg-card px-4 py-2.5 flex items-center justify-between">
-          <span className="text-[11px] text-muted-foreground">{total} complaint{total !== 1 ? 's' : ''}</span>
+        <div className="border-t bg-white px-4 py-2.5 flex items-center justify-between">
+          <span className="text-xs text-muted-foreground font-medium">{total} complaint{total !== 1 ? 's' : ''}</span>
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setPage(page - 1)} disabled={page === 1 || loading}>
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => setPage(page - 1)} disabled={page === 1 || loading}>
               <ChevronLeft className="h-3.5 w-3.5" />
             </Button>
-            <span className="text-[11px] text-muted-foreground min-w-12 text-center">{page}/{totalPages}</span>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setPage(page + 1)} disabled={page >= totalPages || loading}>
+            <span className="text-xs text-muted-foreground font-medium min-w-12 text-center">{page}/{totalPages}</span>
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => setPage(page + 1)} disabled={page >= totalPages || loading}>
               <ChevronRight className="h-3.5 w-3.5" />
             </Button>
           </div>

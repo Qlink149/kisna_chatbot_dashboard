@@ -12,8 +12,8 @@ export default function AgentFooter({
 }) {
   if (!isTakenOver) {
     return (
-      <div className="p-3 bg-muted/30 border-t text-center shrink-0">
-        <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5">
+      <div className="p-3 bg-[rgb(var(--mist-rgb)/0.5)] border-t text-center shrink-0">
+        <p className="text-xs text-muted-foreground font-medium flex items-center justify-center gap-1.5">
           <Check className="h-3.5 w-3.5" /> Read-only — bot is handling this conversation
         </p>
       </div>

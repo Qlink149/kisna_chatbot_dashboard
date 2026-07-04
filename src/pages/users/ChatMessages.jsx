@@ -86,8 +86,14 @@ export default function ChatMessages({
               className={cn('flex w-full min-w-0', msg.role === 'user' ? 'justify-end' : 'justify-start')}
             >
               {msg.role === 'assistant' && (
-                <div className="h-7 w-7 rounded-full bg-gradient-to-br from-indigo-500/20 to-violet-500/10 flex items-center justify-center shrink-0 mr-2 mt-1 shadow-sm border border-indigo-500/10">
-                  <Sparkles className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                <div
+                  className="h-7 w-7 rounded-full flex items-center justify-center shrink-0 mr-2 mt-1 shadow-sm border"
+                  style={{
+                    background: 'linear-gradient(to bottom right, rgb(var(--violet-rgb) / 0.15), rgb(var(--royal-rgb) / 0.08))',
+                    borderColor: 'rgb(var(--violet-rgb) / 0.12)',
+                  }}
+                >
+                  <Sparkles className="h-3.5 w-3.5" style={{ color: 'var(--violet)' }} />
                 </div>
               )}
 
@@ -104,7 +110,7 @@ export default function ChatMessages({
                     ? 'bg-[#d9fdd3] dark:bg-[#005c4b] text-[#111b21] dark:text-[#e9edef] rounded-tr-none'
                     : msg.role === 'agent'
                     ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-100 rounded-tl-none border border-amber-200 dark:border-amber-800'
-                    : 'bg-white dark:bg-[#202c33] text-[#111b21] dark:text-[#e9edef] rounded-tl-none border border-border/50'
+                    : 'bg-white text-[var(--text)] rounded-tl-none border border-[rgb(var(--navy-rgb)/0.1)] shadow-sm'
                 )}
               >
                 {msg.role === 'agent' && (

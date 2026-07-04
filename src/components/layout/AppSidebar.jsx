@@ -46,24 +46,25 @@ function NavItem({ to, label, icon: Icon, exact }) {
       className={cn(
         'group flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-150',
         collapsed
-          ? 'justify-center px-0 py-1 bg-transparent hover:bg-transparent'
-          : isActive
-            ? 'px-3 py-2.5 bg-white text-zinc-900 shadow-sm'
-            : 'px-3 py-2.5 text-zinc-400 hover:bg-white/8 hover:text-white'
+          ? 'justify-center px-0 py-1 bg-transparent hover:bg-transparent border-transparent'
+          : cn(
+              'px-3 py-2.5',
+              isActive ? 'nav-link-active' : 'nav-link-idle'
+            )
       )}
     >
       {collapsed ? (
         <span className={cn(
           'flex h-10 w-10 items-center justify-center rounded-xl transition-colors',
           isActive
-            ? 'bg-white shadow-sm'
-            : 'hover:bg-white/10'
+            ? 'nav-link-active'
+            : 'nav-link-idle hover:bg-[rgba(12,8,40,0.055)]'
         )}>
-          <Icon className={cn('h-5 w-5 shrink-0', isActive ? 'text-zinc-800' : 'text-zinc-400 group-hover:text-white')} />
+          <Icon className={cn('nav-icon h-5 w-5 shrink-0', isActive ? '' : '')} />
         </span>
       ) : (
         <>
-          <Icon className={cn('h-4 w-4 shrink-0', isActive ? 'text-zinc-800' : 'text-zinc-500 group-hover:text-white')} />
+          <Icon className="nav-icon h-4 w-4 shrink-0" />
           <span>{label}</span>
         </>
       )}
@@ -81,17 +82,31 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar collapsible="icon" className="border-r-0 *:bg-zinc-950">
+    <Sidebar collapsible="icon" className="border-r-0 relative">
+      <div
+        className="absolute left-0 right-0 top-0 h-[2px] z-10"
+        style={{
+          background:
+            'linear-gradient(90deg, rgba(31,7,152,0.88) 0%, rgba(141,87,222,0.42) 52%, transparent 100%)',
+        }}
+      />
+
       {/* Brand */}
-      <SidebarHeader className={cn('pt-5 pb-5', collapsed ? 'px-0 flex items-center justify-center' : 'px-4')}>
+      <SidebarHeader className={cn('pt-5 pb-5 relative', collapsed ? 'px-0 flex items-center justify-center' : 'px-4')}>
         <div className={cn('flex items-center gap-3', collapsed && 'justify-center')}>
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#C9A84C] shadow-lg shadow-[#C9A84C]/30">
-            <Diamond className="h-4 w-4 text-zinc-900" />
+          <div
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl shadow-lg"
+            style={{
+              background: 'linear-gradient(135deg, #8d57de 0%, #5d27ca 50%, #1f0798 100%)',
+              boxShadow: '0 8px 24px rgba(93,39,202,0.28)',
+            }}
+          >
+            <Diamond className="h-4 w-4 text-white" />
           </div>
           {!collapsed && (
             <div className="min-w-0">
-              <p className="text-sm font-bold text-white leading-none">KISNA</p>
-              <p className="text-[11px] text-zinc-500 mt-1 leading-none">Diamond & Gold</p>
+              <p className="text-sm font-bold leading-none" style={{ color: 'var(--text)' }}>KISNA</p>
+              <p className="text-[11px] mt-1 leading-none text-muted-foreground">Diamond & Gold</p>
             </div>
           )}
         </div>
@@ -103,11 +118,13 @@ export function AppSidebar() {
           {navGroups.map(({ label, items }) => (
             <div key={label}>
               {!collapsed && (
-                <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
+                <p
+                  className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground"
+                >
                   {label}
                 </p>
               )}
-              {collapsed && <div className="mb-2 h-px bg-white/5 mx-1" />}
+              {collapsed && <div className="mb-2 h-px mx-1" style={{ background: 'rgba(12,8,40,0.08)' }} />}
               <div className="space-y-0.5">
                 {items.map((item) => (
                   <NavItem key={item.to} {...item} />
@@ -122,19 +139,32 @@ export function AppSidebar() {
       <SidebarFooter className={cn('py-4 space-y-3', collapsed ? 'px-2' : 'px-4')}>
         {/* Admin badge */}
         {!collapsed ? (
-          <div className="flex items-center gap-3 rounded-lg bg-white/5 px-3 py-2.5">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#C9A84C]/20">
-              <ShieldCheck className="h-3.5 w-3.5 text-[#C9A84C]" />
+          <div
+            className="flex items-center gap-3 rounded-lg px-3 py-2.5"
+            style={{
+              background: 'rgb(var(--royal-rgb) / 0.06)',
+              border: '1px solid rgb(var(--royal-rgb) / 0.12)',
+            }}
+          >
+            <div
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
+              style={{ background: 'rgb(var(--violet-rgb) / 0.12)' }}
+            >
+              <ShieldCheck className="h-3.5 w-3.5" style={{ color: 'var(--violet)' }} />
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-medium text-white leading-none">Admin</p>
-              <p className="text-[11px] text-zinc-500 mt-1 leading-none">Internal access</p>
+              <p className="text-xs font-medium leading-none" style={{ color: 'var(--text)' }}>Admin</p>
+              <p className="text-[11px] mt-1 leading-none text-muted-foreground">Internal access</p>
             </div>
           </div>
         ) : (
           <div className="flex justify-center">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#C9A84C]/20" title="Admin">
-              <ShieldCheck className="h-3.5 w-3.5 text-[#C9A84C]" />
+            <div
+              className="flex h-8 w-8 items-center justify-center rounded-full"
+              style={{ background: 'rgb(var(--violet-rgb) / 0.12)' }}
+              title="Admin"
+            >
+              <ShieldCheck className="h-3.5 w-3.5" style={{ color: 'var(--violet)' }} />
             </div>
           </div>
         )}
@@ -145,7 +175,8 @@ export function AppSidebar() {
             onClick={handleLogout}
             title={collapsed ? 'Log out' : undefined}
             className={cn(
-              'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-red-500/80 hover:bg-white/5 hover:text-red-400 transition-colors',
+              'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
+              'text-[#d25f86] hover:bg-[rgba(210,95,134,0.08)] hover:text-[#d25f86]',
               collapsed && 'justify-center px-2'
             )}
           >
@@ -158,13 +189,13 @@ export function AppSidebar() {
             onClick={toggleSidebar}
             title={collapsed ? 'Expand' : 'Collapse'}
             className={cn(
-              'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-500 hover:bg-white/5 hover:text-zinc-200 transition-colors',
+              'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors nav-link-idle',
               collapsed && 'justify-center px-2'
             )}
           >
             {collapsed
-              ? <PanelLeftOpen className="h-4 w-4" />
-              : <><PanelLeftClose className="h-4 w-4" /><span>Collapse</span></>
+              ? <PanelLeftOpen className="nav-icon h-4 w-4" />
+              : <><PanelLeftClose className="nav-icon h-4 w-4" /><span>Collapse</span></>
             }
           </button>
         </div>

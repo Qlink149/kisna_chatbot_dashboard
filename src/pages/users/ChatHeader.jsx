@@ -37,8 +37,14 @@ export default function ChatHeader({
             <ChevronLeft className="h-5 w-5" />
           </Button>
         )}
-        <div className="h-10 w-10 rounded-full bg-[#C9A84C]/10 flex items-center justify-center shrink-0 border border-[#C9A84C]/20">
-          <User className="h-5 w-5 text-[#C9A84C]" />
+        <div
+          className="h-10 w-10 rounded-full flex items-center justify-center shrink-0 border"
+          style={{
+            background: 'rgb(var(--violet-rgb) / 0.08)',
+            borderColor: 'rgb(var(--violet-rgb) / 0.18)',
+          }}
+        >
+          <User className="h-5 w-5" style={{ color: 'var(--violet)' }} />
         </div>
         <div className="min-w-0">
           <h2 className="text-sm font-bold truncate">{activeUserData.username || 'Unknown User'}</h2>
@@ -52,7 +58,14 @@ export default function ChatHeader({
             <Clock className="h-3 w-3" /> Window Closed
           </span>
         ) : (
-          <span className="hidden sm:inline-flex items-center gap-1 rounded-full border border-[#C9A84C]/30 bg-[#C9A84C]/10 px-2 py-0.5 text-[10px] font-medium text-[#C9A84C] shrink-0">
+          <span
+            className="hidden sm:inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium shrink-0"
+            style={{
+              border: '1px solid rgb(var(--violet-rgb) / 0.18)',
+              background: 'rgb(var(--violet-rgb) / 0.08)',
+              color: 'var(--violet)',
+            }}
+          >
             <CheckCircle2 className="h-3 w-3" /> Window Open
           </span>
         )}
@@ -85,7 +98,7 @@ export default function ChatHeader({
         ) : (
           <Button
             size="sm" variant="outline"
-            className="h-8 text-xs"
+            className="h-8 text-xs font-semibold border-[rgb(var(--violet-rgb)/0.25)] text-[var(--violet)] hover:bg-[rgb(var(--violet-rgb)/0.08)]"
             onClick={onTakeover} disabled={takingOver || isWindowExpired}
             title={isWindowExpired ? '24-hour messaging window has closed' : undefined}
           >

@@ -20,14 +20,14 @@ export default function ConversationSidebar({
   className,
 }) {
   return (
-    <div className={cn('w-full lg:w-80 shrink-0 min-h-0 overflow-hidden border-r flex flex-col bg-background/50', className)}>
-      <div className="p-4 border-b bg-card shrink-0">
-        <h1 className="text-xl font-bold tracking-tight mb-4">Conversations</h1>
+    <div className={cn('w-full lg:w-80 shrink-0 min-h-0 overflow-hidden border-r flex flex-col bg-white/80', className)}>
+      <div className="p-4 border-b bg-white shrink-0">
+        <h1 className="text-xl font-bold tracking-tight mb-4 font-display text-foreground">Conversations</h1>
         <div className="relative">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search users..."
-            className="pl-9 h-9 bg-muted/50 border-transparent focus-visible:bg-background focus-visible:border-primary"
+            className="pl-9 h-9 bg-white border border-[rgb(var(--navy-rgb)/0.12)] focus-visible:bg-white focus-visible:border-primary placeholder:text-muted-foreground"
             value={search}
             onChange={e => onSearchChange(e.target.value)}
           />
@@ -35,20 +35,20 @@ export default function ConversationSidebar({
         <div className="flex gap-1.5 mt-3">
           <button
             onClick={() => onFilterChange(false)}
-            className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+            className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors border ${
               !agentFilter
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground hover:text-foreground'
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'bg-white text-muted-foreground border-[rgb(var(--navy-rgb)/0.12)] hover:text-foreground hover:border-[rgb(var(--violet-rgb)/0.25)]'
             }`}
           >
             All
           </button>
           <button
             onClick={() => onFilterChange(true)}
-            className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+            className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors border ${
               agentFilter
-                ? 'bg-yellow-500 text-white'
-                : 'bg-muted text-muted-foreground hover:text-foreground'
+                ? 'bg-[#f59e0b] text-white border-[#f59e0b]'
+                : 'bg-white text-muted-foreground border-[rgb(var(--navy-rgb)/0.12)] hover:text-foreground hover:border-[rgb(var(--violet-rgb)/0.25)]'
             }`}
           >
             Agent Requested
@@ -72,7 +72,7 @@ export default function ConversationSidebar({
                 key={user._id || user.phone_number}
                 className={`flex items-start gap-3 p-4 cursor-pointer transition-colors relative overflow-hidden
                   ${activePhone === user.phone_number
-                    ? 'bg-blue-100/50 dark:bg-yellow-950/40'
+                    ? 'bg-[rgb(var(--violet-rgb)/0.08)]'
                     : user.live_agent_required
                       ? 'bg-yellow-50 dark:bg-yellow-950/20 hover:bg-yellow-100/70 dark:hover:bg-yellow-950/30'
                       : 'hover:bg-muted/50'
@@ -87,14 +87,14 @@ export default function ConversationSidebar({
                     ? 'bg-yellow-50 dark:bg-yellow-950/30 border-yellow-300 dark:border-yellow-700'
                     : isWindowExpired(user.updated_at)
                       ? 'bg-muted border-border'
-                      : 'bg-[#C9A84C]/10 border-[#C9A84C]/30'
+                      : 'border-[rgb(var(--violet-rgb)/0.18)] bg-[rgb(var(--violet-rgb)/0.08)]'
                 }`}>
                   <User className={`h-5 w-5 ${
                     user.live_agent_required
                       ? 'text-yellow-500'
                       : isWindowExpired(user.updated_at)
                         ? 'text-muted-foreground'
-                        : 'text-[#C9A84C]'
+                        : 'text-[var(--violet)]'
                   }`} />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -102,7 +102,7 @@ export default function ConversationSidebar({
                     <p className="text-sm font-semibold truncate text-foreground">
                       {user.username || 'Unknown User'}
                     </p>
-                    <p className="text-[10px] text-muted-foreground shrink-0 uppercase tracking-widest">
+                    <p className="text-[10px] text-muted-foreground shrink-0 uppercase tracking-widest font-medium">
                       {safeFormatDate(user.updated_at)}
                     </p>
                   </div>
@@ -121,7 +121,14 @@ export default function ConversationSidebar({
                           Closed
                         </span>
                       ) : (
-                        <span className="rounded-full border border-[#C9A84C]/30 bg-[#C9A84C]/10 px-1.5 py-0 text-[9px] font-medium text-[#C9A84C]">
+                        <span
+                          className="rounded-full px-1.5 py-0 text-[9px] font-medium"
+                          style={{
+                            border: '1px solid rgb(var(--violet-rgb) / 0.18)',
+                            background: 'rgb(var(--violet-rgb) / 0.08)',
+                            color: 'var(--violet)',
+                          }}
+                        >
                           Open
                         </span>
                       )}
@@ -134,9 +141,9 @@ export default function ConversationSidebar({
         )}
       </div>
 
-      <div className="border-t bg-card p-2.5 shrink-0">
+      <div className="border-t bg-white p-2.5 shrink-0">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] text-muted-foreground">
+          <span className="text-xs text-muted-foreground font-medium">
             {total} user{total !== 1 ? 's' : ''}
           </span>
           <div className="flex items-center gap-1">
@@ -147,7 +154,7 @@ export default function ConversationSidebar({
             >
               <ChevronLeft className="h-3.5 w-3.5" />
             </Button>
-            <span className="text-[11px] text-muted-foreground min-w-12 text-center">
+            <span className="text-xs text-muted-foreground font-medium min-w-12 text-center">
               {page}/{totalPages}
             </span>
             <Button

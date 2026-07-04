@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { cn } from '@/lib/utils'
 import { getDashboardStats, getUserGrowth, getStoreVisitGrowth } from '@/lib/api'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { BRAND_COLORS, statIconClasses } from '@/components/charts/brandChartTheme'
 
 function mapGrowthPeriod(period) {
   if (period === 'year') return 'year'
@@ -40,17 +41,17 @@ function PeriodFilter({ period, onFilter }) {
 
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="hidden md:flex items-center gap-1.5 opacity-50 cursor-not-allowed">
+          <div className="hidden md:flex items-center gap-1.5 cursor-not-allowed">
             <input
               type="date"
               disabled
-              className="h-7 rounded-md border border-input bg-muted/50 px-2 text-xs text-muted-foreground outline-none"
+              className="h-7 rounded-md border border-[rgb(var(--navy-rgb)/0.12)] bg-white px-2 text-xs text-muted-foreground outline-none"
             />
-            <span className="text-[10px] text-muted-foreground">→</span>
+            <span className="text-xs text-muted-foreground">→</span>
             <input
               type="date"
               disabled
-              className="h-7 rounded-md border border-input bg-muted/50 px-2 text-xs text-muted-foreground outline-none"
+              className="h-7 rounded-md border border-[rgb(var(--navy-rgb)/0.12)] bg-white px-2 text-xs text-muted-foreground outline-none"
             />
           </div>
         </TooltipTrigger>
@@ -73,7 +74,7 @@ function PeriodFilter({ period, onFilter }) {
 
 function StatCard({ label, description, icon: Icon, href, color, count, loading }) {
   const inner = (
-    <div className="relative rounded-xl border bg-card p-5 transition-all hover:shadow-md hover:-translate-y-0.5 duration-200">
+    <div className="relative executive-card p-5 transition-all hover:shadow-md hover:-translate-y-0.5 duration-200">
       <div className="flex items-start justify-between">
         <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', color)}>
           <Icon className="h-5 w-5" />
@@ -83,7 +84,7 @@ function StatCard({ label, description, icon: Icon, href, color, count, loading 
       <div className="mt-4">
         {loading ? <Skeleton className="h-8 w-16 mb-1" /> : <p className="text-3xl font-bold tracking-tight">{count ?? '—'}</p>}
         <p className="text-sm font-medium mt-1">{label}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{description}</p>
       </div>
     </div>
   )
@@ -93,13 +94,13 @@ function StatCard({ label, description, icon: Icon, href, color, count, loading 
 
 // ─── Ratings card ────────────────────────────────────────────────────────────
 
-const SCORE_COLOR = { Excellent: 'text-green-600', Average: 'text-amber-500', Poor: 'text-red-500' }
+const SCORE_COLOR = { Excellent: 'text-[#22b07d]', Average: 'text-[#f59e0b]', Poor: 'text-[#d25f86]' }
 
 function RatingsCard({ ratings, loading }) {
   const score = ratings?.avg_score
   return (
-    <div className="rounded-xl border bg-card p-5">
-      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100 text-yellow-600">
+    <div className="executive-card p-5">
+      <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', statIconClasses('warning'))}>
         <Star className="h-5 w-5" />
       </div>
       <div className="mt-4">
@@ -107,14 +108,14 @@ function RatingsCard({ ratings, loading }) {
           <p className={cn('text-3xl font-bold tracking-tight', SCORE_COLOR[score] ?? 'text-foreground')}>{score ?? '—'}</p>
         )}
         <p className="text-sm font-medium mt-1">Customer Agent Feedback</p>
-        <div className="text-xs text-muted-foreground mt-0.5">
+        <div className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
           {loading ? <Skeleton className="h-3 w-28" /> : ratings ? `${ratings.total_ratings} ratings on human agents` : 'No ratings yet'}
         </div>
         {!loading && ratings?.breakdown && (
           <div className="mt-3 flex flex-wrap gap-3 text-xs font-medium">
-            <span className="text-green-600">{ratings.breakdown.excellent} excellent</span>
-            <span className="text-amber-500">{ratings.breakdown.average} average</span>
-            <span className="text-red-500">{ratings.breakdown.poor} poor</span>
+            <span className="text-[#22b07d]">{ratings.breakdown.excellent} excellent</span>
+            <span className="text-[#f59e0b]">{ratings.breakdown.average} average</span>
+            <span className="text-[#d25f86]">{ratings.breakdown.poor} poor</span>
           </div>
         )}
       </div>
@@ -196,7 +197,7 @@ function GrowthChart({ data, barColor, loading, unavailable }) {
               </div>
               {showLabel && (
                 <span
-                  className="absolute left-0 right-0 text-center text-[10px] font-medium text-foreground/70 leading-none pointer-events-none"
+                  className="absolute left-0 right-0 text-center text-[10px] font-semibold text-muted-foreground leading-none pointer-events-none"
                   style={{ bottom: `calc(${pct}% + 4px)` }}
                 >
                   {d.count}
@@ -238,7 +239,7 @@ function GrowthCard({ title, icon: Icon, iconBg, barColor, data, loading, unavai
   const up = (trendPct ?? 0) >= 0
 
   return (
-    <div className="rounded-xl border bg-card p-5 flex flex-col md:flex-row gap-6 items-start">
+    <div className="executive-card chart-surface p-5 flex flex-col md:flex-row gap-6 items-start">
       <div className="w-44 shrink-0">
         <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', iconBg)}>
           <Icon className="h-5 w-5" />
@@ -250,7 +251,7 @@ function GrowthCard({ title, icon: Icon, iconBg, barColor, data, loading, unavai
             <div className="flex items-baseline gap-2">
               <p className="text-3xl font-bold tracking-tight">{last}</p>
               {trendPct !== null && (
-                <span className={cn('flex items-center gap-0.5 text-xs font-medium', up ? 'text-[#C9A84C]' : 'text-red-500')}>
+                <span className={cn('flex items-center gap-0.5 text-xs font-medium', up ? 'text-[#22b07d]' : 'text-[#d25f86]')}>
                   {up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                   {Math.abs(trendPct)}%
                 </span>
@@ -258,7 +259,7 @@ function GrowthCard({ title, icon: Icon, iconBg, barColor, data, loading, unavai
             </div>
           )}
           <p className="text-sm font-medium mt-1">{title}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
             {loading ? '' : unavailable ? 'Analytics coming soon' : (data?.length ? `${data.length} data points` : 'No data')}
           </p>
         </div>
@@ -343,14 +344,14 @@ export default function Overview() {
             <PeriodFilter period={period} onFilter={setFilter} />
             <div className="flex items-center gap-2">
               {lastSync && (
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-xs text-muted-foreground font-medium">
                   Last synced {lastSync.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
                 </span>
               )}
               <button
                 onClick={() => fetchStats(true)}
                 disabled={loading}
-                className="flex items-center gap-1.5 rounded-md border border-input bg-background px-2.5 h-7 text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                className="brand-button-ghost flex items-center gap-1.5 px-2.5 h-7 text-xs disabled:opacity-50"
               >
                 <RefreshCw className={cn('h-3 w-3', loading && 'animate-spin')} />
                 Refresh
@@ -361,17 +362,17 @@ export default function Overview() {
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard label="Users" description="WhatsApp conversations" icon={Users} href="/users" color="bg-[#C9A84C]/15 text-[#C9A84C]" count={stats?.total_users} loading={loading} />
-        <StatCard label="Messages" description={stats ? `${stats.avg_messages_per_user?.toFixed(1) ?? '—'} avg per user` : 'Avg per user'} icon={MessageSquare} color="bg-blue-100 text-blue-600" count={stats?.total_messages} loading={loading} />
-        <StatCard label="Store Visit Requests" description="Jewellery store visit requests" icon={Store} color="bg-purple-100 text-purple-600" count={stats?.total_store_visits} loading={loading} />
-        <StatCard label="Complaints" description="Complaints filed via WhatsApp" icon={AlertTriangle} href="/complaints" color="bg-red-100 text-red-600" count={stats?.total_complaints} loading={loading} />
-        <StatCard label="AI Response Time" description="Average across all messages" icon={Zap} color="bg-orange-100 text-orange-600" count={loading ? null : formatResponseTime(stats?.avg_ai_response_time_ms)} loading={loading} />
+        <StatCard label="Users" description="WhatsApp conversations" icon={Users} href="/users" color={statIconClasses('primary')} count={stats?.total_users} loading={loading} />
+        <StatCard label="Messages" description={stats ? `${stats.avg_messages_per_user?.toFixed(1) ?? '—'} avg per user` : 'Avg per user'} icon={MessageSquare} color={statIconClasses('soft')} count={stats?.total_messages} loading={loading} />
+        <StatCard label="Store Visit Requests" description="Jewellery store visit requests" icon={Store} color={statIconClasses('deep')} count={stats?.total_store_visits} loading={loading} />
+        <StatCard label="Complaints" description="Complaints filed via WhatsApp" icon={AlertTriangle} href="/complaints" color={statIconClasses('danger')} count={stats?.total_complaints} loading={loading} />
+        <StatCard label="AI Response Time" description="Average across all messages" icon={Zap} color={statIconClasses('warning')} count={loading ? null : formatResponseTime(stats?.avg_ai_response_time_ms)} loading={loading} />
         <RatingsCard ratings={stats?.ratings} loading={loading} />
         <div className="col-span-full">
-          <GrowthCard title="User Growth" icon={Users} iconBg="bg-[#C9A84C]/15 text-[#C9A84C]" barColor="#C9A84C" data={userGrowth} loading={loading} unavailable={userGrowthUnavailable} />
+          <GrowthCard title="User Growth" icon={Users} iconBg={statIconClasses('primary')} barColor={BRAND_COLORS.primary} data={userGrowth} loading={loading} unavailable={userGrowthUnavailable} />
         </div>
         <div className="col-span-full">
-          <GrowthCard title="Store Visit Growth" icon={Store} iconBg="bg-purple-100 text-purple-600" barColor="#a855f7" data={storeVisitGrowth} loading={loading} unavailable={storeGrowthUnavailable} />
+          <GrowthCard title="Store Visit Growth" icon={Store} iconBg={statIconClasses('soft')} barColor={BRAND_COLORS.soft} data={storeVisitGrowth} loading={loading} unavailable={storeGrowthUnavailable} />
         </div>
       </div>
     </div>
