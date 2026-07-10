@@ -131,3 +131,18 @@ export const getComplaintsByPhone = (phone) => {
   const q = withClientId()
   return api(`/system/damage/${phone}?${q.toString()}`)
 }
+
+// ---------------- CALLBACKS ----------------
+export const listCallbacks = (page = 1, limit = 20, filters = {}) => {
+  const q = withClientId()
+  q.set('page', String(page))
+  q.set('limit', String(limit))
+  if (filters.status) q.set('status', filters.status)
+  if (filters.request_type) q.set('request_type', filters.request_type)
+  return api(`/system/callbacks?${q.toString()}`)
+}
+
+export const updateCallbackStatus = (requestId, status) => {
+  const q = withClientId()
+  return api(`/system/callbacks/${requestId}?${q.toString()}`, 'PATCH', { status })
+}

@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   LogOut,
   AlertTriangle,
+  Phone,
 } from 'lucide-react'
 
 const navGroups = [
@@ -26,6 +27,7 @@ const navGroups = [
       { to: '/', label: 'Overview', icon: LayoutDashboard, exact: true },
       { to: '/users', label: 'Users', icon: Users },
       { to: '/complaints', label: 'Complaints', icon: AlertTriangle },
+      { to: '/callbacks', label: 'Callbacks', icon: Phone },
     ],
   },
 ]

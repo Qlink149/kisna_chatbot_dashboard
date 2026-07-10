@@ -8,6 +8,17 @@ import { safeFormatDate } from '@/pages/users/utils'
 import { ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react'
 
 const KISNA_COMPLAINT_TYPES = {
+  '0_Want_to_Buy': { label: 'Want to Buy', color: 'blue' },
+  '1_Order_Related': { label: 'Order Related', color: 'orange' },
+  '2_Payment_Related': { label: 'Payment Related', color: 'purple' },
+  '3_Stores_Related': { label: 'Stores Related', color: 'blue' },
+  '4_Returns_Related': { label: 'Returns Related', color: 'yellow' },
+  '5_Exchange_Buyback': { label: 'Exchange/Buyback', color: 'purple' },
+  '6_Digital_Gold': { label: 'Digital Gold', color: 'orange' },
+  '7_Kisna_Points': { label: 'Kisna Points', color: 'blue' },
+  '8_10_Plus_1_Monthly_Plan': { label: '10+1 Monthly Plan', color: 'green' },
+  '9_Other': { label: 'Other', color: 'red' },
+  // Legacy complaint flow IDs (pre-migration)
   '0_Delayed_Delivery': { label: 'Delayed Delivery', color: 'orange' },
   '1_Order_Cancellation': { label: 'Order Cancellation', color: 'red' },
   '2_Wrong_Item_Delivered': { label: 'Wrong Item Delivered', color: 'red' },
@@ -24,6 +35,7 @@ const TYPE_COLOR_CLASSES = {
   purple: 'bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-950/30 dark:text-purple-400 dark:border-purple-800',
   yellow: 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950/30 dark:text-yellow-400 dark:border-yellow-800',
   blue: 'bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800',
+  green: 'bg-green-50 text-green-600 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800',
 }
 
 const STATUS_COLOR_CLASSES = {
