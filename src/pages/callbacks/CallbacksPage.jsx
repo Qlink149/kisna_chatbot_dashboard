@@ -21,8 +21,22 @@ const REASON_LABELS = {
 }
 
 const TIME_LABELS = {
+  '10-11': 'Morning — 10 AM–11 AM',
+  '11-12': 'Morning — 11 AM–12 PM',
+  '12-13': 'Morning — 12 PM–1 PM',
+  '13-14': 'Afternoon — 1 PM–2 PM',
+  '14-15': 'Afternoon — 2 PM–3 PM',
+  '15-16': 'Afternoon — 3 PM–4 PM',
+  '16-17': 'Afternoon — 4 PM–5 PM',
   morning: 'Morning (10 AM–1 PM)',
   afternoon: 'Afternoon (1 PM–5 PM)',
+}
+
+function formatPreferredDate(iso) {
+  if (!iso) return '—'
+  const d = new Date(`${iso}T00:00:00`)
+  if (Number.isNaN(d.getTime())) return iso
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 const TYPE_COLOR_CLASSES = {
@@ -66,7 +80,7 @@ function StatusBadge({ status }) {
 function RowSkeleton() {
   return (
     <tr className="border-b">
-      {Array.from({ length: 9 }).map((_, i) => (
+      {Array.from({ length: 10 }).map((_, i) => (
         <td key={i} className="px-4 py-3"><Skeleton className="h-4 w-full" /></td>
       ))}
     </tr>
@@ -162,6 +176,7 @@ export default function CallbacksPage() {
                 <th className="px-4 py-3 text-left text-xs uppercase tracking-wider">Mobile</th>
                 <th className="px-4 py-3 text-left text-xs uppercase tracking-wider">Type</th>
                 <th className="px-4 py-3 text-left text-xs uppercase tracking-wider">Reason</th>
+                <th className="px-4 py-3 text-left text-xs uppercase tracking-wider">Preferred Date</th>
                 <th className="px-4 py-3 text-left text-xs uppercase tracking-wider">Preferred Time</th>
                 <th className="px-4 py-3 text-left text-xs uppercase tracking-wider">Status</th>
                 <th className="px-4 py-3 text-left text-xs uppercase tracking-wider">Created At</th>
@@ -173,7 +188,7 @@ export default function CallbacksPage() {
                 Array.from({ length: 8 }).map((_, i) => <RowSkeleton key={i} />)
               ) : callbacks.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-12 text-center text-muted-foreground">
+                  <td colSpan={10} className="px-4 py-12 text-center text-muted-foreground">
                     <Phone className="mx-auto mb-2 h-8 w-8 opacity-30" />
                     No callback requests found
                   </td>
@@ -198,8 +213,21 @@ export default function CallbacksPage() {
                         ? '—'
                         : (REASON_LABELS[row.reason] || row.reason || '—')}
                     </td>
+                    <td className="px-4 py-3 cell-muted whitespace-nowrap">
+                      <div className="flex flex-col gap-1">
+                        <span>{formatPreferredDate(row.preferred_date)}</span>
+                        {row.preferred_date_past ? (
+                          <span className="inline-flex w-fit rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400">
+                            past date
+                          </span>
+                        ) : null}
+                      </div>
+                    </td>
                     <td className="px-4 py-3 cell-muted">
-                      {TIME_LABELS[row.preferred_time] || row.preferred_time || '—'}
+                      {row.preferred_time_label
+                        || TIME_LABELS[row.preferred_time]
+                        || row.preferred_time
+                        || '—'}
                     </td>
                     <td className="px-4 py-3"><StatusBadge status={row.status} /></td>
                     <td className="px-4 py-3 cell-muted whitespace-nowrap">

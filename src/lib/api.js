@@ -106,6 +106,19 @@ export const getUserByPhone = (phone) => {
   return api(`/system/user/${phone}?${q.toString()}`)
 }
 
+export const getChatHistory = (phone, { before, beforeId, limit = 50 } = {}) => {
+  const q = withClientId()
+  q.set('limit', String(limit))
+  if (before != null) q.set('before', String(before))
+  if (beforeId) q.set('before_id', beforeId)
+  return api(`/system/chat-history/${phone}?${q.toString()}`)
+}
+
+export const getMessageTrace = (requestId) => {
+  const q = withClientId()
+  return api(`/system/message-trace/${requestId}?${q.toString()}`)
+}
+
 // ---------------- CONVERSATIONS ----------------
 export const takeoverConversation = (phone, takenBy) =>
   api(`/system/conversation/${phone}/takeover`, 'POST', { taken_by: takenBy })

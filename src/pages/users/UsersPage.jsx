@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import notificationSound from '@/assets/notification_sound.mp3'
 import { useSearchParams } from 'react-router-dom'
-import { listUsers, searchUsers, getUserByPhone, takeoverConversation, sendAgentMessage, releaseConversation, resolveAgentRequest, getToken } from '@/lib/api'
+import { listUsers, searchUsers, getUserByPhone, getChatHistory, takeoverConversation, sendAgentMessage, releaseConversation, resolveAgentRequest, getToken } from '@/lib/api'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { isWindowExpired as checkWindowExpired } from './utils'
@@ -93,6 +93,11 @@ export default function UsersPage() {
   const chatScrollRef = useRef(null)
   const sseRef = useRef(null)
   const prevAgentPhonesRef = useRef(null)
+  const loadingOlderRef = useRef(false)
+  const scrollLoadDebounceRef = useRef(null)
+  const [loadingOlder, setLoadingOlder] = useState(false)
+  const [hasMoreHistory, setHasMoreHistory] = useState(false)
+  const [beginningReached, setBeginningReached] = useState(false)
 
   const totalPages = Math.ceil(total / limit) || 1
 
@@ -117,10 +122,80 @@ export default function UsersPage() {
     }
   }, [])
 
+  const mergeHistoryUnique = (older, newer) => {
+    const seen = new Set()
+    const out = []
+    for (const msg of [...older, ...newer]) {
+      const key = msg._id || `${msg.role}|${msg.timestamp}|${msg.content}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      out.push(msg)
+    }
+    return out
+  }
+
+  const loadOlderMessages = useCallback(async () => {
+    if (!activePhone || loadingOlderRef.current || !hasMoreHistory) return
+    const history = userMap[activePhone]?.chat_history || []
+    const first = history[0]
+    if (!first?.timestamp) {
+      setHasMoreHistory(false)
+      setBeginningReached(true)
+      return
+    }
+    loadingOlderRef.current = true
+    setLoadingOlder(true)
+    const el = chatScrollRef.current
+    const prevHeight = el?.scrollHeight || 0
+    try {
+      const page = await getChatHistory(activePhone, {
+        before: first.timestamp,
+        beforeId: first._id,
+        limit: 50,
+      })
+      const older = page?.messages || page?.chat_history || []
+      setHasMoreHistory(Boolean(page?.has_more))
+      if (!page?.has_more) setBeginningReached(true)
+      if (older.length) {
+        setUserMap(prev => {
+          const existing = prev[activePhone] || {}
+          return {
+            ...prev,
+            [activePhone]: {
+              ...existing,
+              chat_history: mergeHistoryUnique(older, existing.chat_history || []),
+            },
+          }
+        })
+        requestAnimationFrame(() => {
+          if (el) el.scrollTop = el.scrollHeight - prevHeight
+        })
+      }
+    } catch {
+      // ignore — user can retry by scrolling again
+    } finally {
+      loadingOlderRef.current = false
+      setLoadingOlder(false)
+    }
+  }, [activePhone, hasMoreHistory, userMap])
+
   const handleChatScroll = useCallback((e) => {
     const { scrollTop, scrollHeight, clientHeight } = e.target
     setShowScrollBottom(scrollHeight - scrollTop - clientHeight >= 100)
-  }, [])
+    if (scrollTop <= 40) {
+      if (scrollLoadDebounceRef.current) return
+      scrollLoadDebounceRef.current = setTimeout(() => {
+        scrollLoadDebounceRef.current = null
+        loadOlderMessages()
+      }, 250)
+    }
+  }, [loadOlderMessages])
+
+  useEffect(() => {
+    setHasMoreHistory(false)
+    setBeginningReached(false)
+    loadingOlderRef.current = false
+  }, [activePhone])
 
   // Fetch user list + auto-refresh every 5s
   const fetchUsers = useCallback(() => {
@@ -145,25 +220,31 @@ export default function UsersPage() {
     return () => clearInterval(interval)
   }, [fetchUsers])
 
-  // Poll active conversation every 10s — SSE is real-time, this is the fallback
+  // Poll active conversation every 5s — SSE is real-time, this is the fallback
   useEffect(() => {
     if (!activePhone) return
     const interval = setInterval(() => {
-      getUserByPhone(activePhone)
-        .then(data => setUserMap(prev => {
-          const existing = prev[activePhone] || {}
-          const serverHistory = data.chat_history || []
-          const localHistory = existing.chat_history || []
-          return {
-            ...prev,
-            [activePhone]: {
-              ...existing,
-              ...data,
-              // keep local if it has more messages (preserves optimistic updates)
-              chat_history: serverHistory.length >= localHistory.length ? serverHistory : localHistory,
+      Promise.all([
+        getUserByPhone(activePhone),
+        getChatHistory(activePhone, { limit: 50 }),
+      ])
+        .then(([data, historyPage]) => {
+          const serverHistory = historyPage?.messages || historyPage?.chat_history || data.chat_history || []
+          setHasMoreHistory(Boolean(historyPage?.has_more))
+          setUserMap(prev => {
+            const existing = prev[activePhone] || {}
+            const merged = mergeHistoryUnique(existing.chat_history || [], serverHistory)
+            merged.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
+            return {
+              ...prev,
+              [activePhone]: {
+                ...existing,
+                ...data,
+                chat_history: merged,
+              },
             }
-          }
-        }))
+          })
+        })
         .catch(() => {})
     }, 5000)
     return () => clearInterval(interval)
@@ -174,24 +255,27 @@ export default function UsersPage() {
     if (!activePhone) return
 
     const fetchUser = () => {
-      getUserByPhone(activePhone)
-        .then(data => {
-          setUserMap(prev => {
-            const existing = prev[activePhone] || {}
-            const serverHistory = data.chat_history || []
-            const localHistory = existing.chat_history || []
-            return {
-              ...prev,
-              [activePhone]: {
-                ...existing,
-                ...data,
-                chat_history: serverHistory.length >= localHistory.length ? serverHistory : localHistory,
-              }
-            }
-          })
+      setLoadingActive(true)
+      Promise.all([
+        getUserByPhone(activePhone),
+        getChatHistory(activePhone, { limit: 50 }),
+      ])
+        .then(([data, historyPage]) => {
+          const messages = historyPage?.messages || historyPage?.chat_history || data.chat_history || []
+          setHasMoreHistory(Boolean(historyPage?.has_more))
+          if (!historyPage?.has_more) setBeginningReached(true)
+          setUserMap(prev => ({
+            ...prev,
+            [activePhone]: {
+              ...(prev[activePhone] || {}),
+              ...data,
+              chat_history: messages,
+            },
+          }))
           setTakeover(activePhone, data.human_takeover?.active ?? false, data.human_takeover?.taken_by ?? null)
         })
         .catch(() => {})
+        .finally(() => setLoadingActive(false))
     }
     fetchUser()
 
@@ -449,6 +533,9 @@ export default function UsersPage() {
             showScrollBottom={showScrollBottom}
             onScroll={handleChatScroll}
             onScrollToBottom={scrollToBottom}
+            loadingOlder={loadingOlder}
+            hasMore={hasMoreHistory}
+            beginningReached={beginningReached}
           />
 
           {activePhone && (
