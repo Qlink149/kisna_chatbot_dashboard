@@ -99,8 +99,10 @@ function TracePanel({ requestId, onClose }) {
   }, [requestId])
 
   const banner =
-    trace?.outcome === 'no_products' || trace?.outcome === 'fallback_used'
+    trace?.outcome === 'no_products'
       ? "Kisna's catalogue API returned no products for this search."
+      : trace?.outcome === 'fallback_used'
+      ? 'Exact filters returned nothing — showed closest matches instead.'
       : null
 
   return (
