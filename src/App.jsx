@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Layout } from '@/components/layout/Layout'
 import ProtectedRoute from '@/components/ProtectedRoute'
+import { AuthProvider } from '@/context/AuthContext'
 import Overview from '@/pages/Overview'
 import UsersPage from '@/pages/users/UsersPage'
 import ComplaintsPage from '@/pages/complaints/ComplaintsPage'
@@ -17,6 +18,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
     <BrowserRouter>
+      <AuthProvider>
       <TooltipProvider>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
@@ -37,6 +39,7 @@ export default function App() {
           </Routes>
       </TooltipProvider>
       <Toaster position="top-right" richColors closeButton />
+      </AuthProvider>
     </BrowserRouter>
     </QueryClientProvider>
   )

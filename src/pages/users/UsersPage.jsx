@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import notificationSound from '@/assets/notification_sound.mp3'
 import { useSearchParams } from 'react-router-dom'
-import { listUsers, searchUsers, getUserByPhone, getChatHistory, takeoverConversation, sendAgentMessage, releaseConversation, resolveAgentRequest, getToken } from '@/lib/api'
+import { listUsers, searchUsers, getUserByPhone, getChatHistory, takeoverConversation, sendAgentMessage, releaseConversation, resolveAgentRequest } from '@/lib/api'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { isWindowExpired as checkWindowExpired } from './utils'
@@ -310,14 +310,14 @@ export default function UsersPage() {
     }
     fetchUser()
 
-    const token = getToken()
     const baseUrl = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_URL || '')
 
     let es = null
     const connect = () => {
       if (cancelled) return
       es = new EventSource(
-        `${baseUrl}/system/conversation/${activePhone}/stream${token ? `?token=${token}` : ''}`
+        `${baseUrl}/system/conversation/${activePhone}/stream`,
+        { withCredentials: true }
       )
       sseRef.current = es
       wireHandlers()

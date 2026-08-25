@@ -1,19 +1,5 @@
 const BASE_URL = import.meta.env.VITE_API_URL
 const CLIENT_ID = 'kisna'
-const TOKEN_KEY = 'kisna_dashboard_token'
-
-let _token = localStorage.getItem(TOKEN_KEY)
-
-export const setToken = (t) => {
-  _token = t
-  if (t) localStorage.setItem(TOKEN_KEY, t)
-  else localStorage.removeItem(TOKEN_KEY)
-}
-export const clearToken = () => {
-  _token = null
-  localStorage.removeItem(TOKEN_KEY)
-}
-export const getToken = () => _token || localStorage.getItem(TOKEN_KEY)
 
 const withClientId = (params = new URLSearchParams()) => {
   params.set('client_id', CLIENT_ID)
@@ -21,12 +7,11 @@ const withClientId = (params = new URLSearchParams()) => {
 }
 
 const api = async (url, method = 'GET', body = null) => {
-  const token = getToken()
   const options = {
     method,
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   }
   if (body) options.body = JSON.stringify(body)
@@ -34,7 +19,6 @@ const api = async (url, method = 'GET', body = null) => {
   const res = await fetch(`${BASE_URL}${url}`, options)
 
   if (res.status === 401 || res.status === 403) {
-    clearToken()
     if (window.location.pathname !== '/login') {
       window.location.href = '/login'
     }
@@ -51,7 +35,8 @@ const api = async (url, method = 'GET', body = null) => {
 
 // ---------------- SYSTEM ----------------
 export const login = (data) => api('/system/auth/login', 'POST', data)
-export const logout = () => { clearToken(); return Promise.resolve() }
+export const logout = () => api('/system/auth/logout', 'POST')
+export const getMe = () => api('/system/auth/me')
 export const pingAPI = () => api('/system/ping')
 
 // ---------------- DASHBOARD ----------------

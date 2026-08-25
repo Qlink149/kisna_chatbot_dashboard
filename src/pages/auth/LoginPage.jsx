@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { login, setToken } from '@/lib/api'
+import { login } from '@/lib/api'
+import { useAuth } from '@/context/AuthContext'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
 import { Loader2, Diamond, Eye, EyeOff } from 'lucide-react'
@@ -20,13 +21,14 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const { refresh } = useAuth()
 
   async function handleSubmit(e) {
     e.preventDefault()
     setLoading(true)
     try {
-      const res = await login({ username, password })
-      setToken(res.token)
+      await login({ username, password })
+      await refresh()
       localStorage.setItem('agent_username', username)
       toast.success('Logged in successfully')
       navigate('/')
