@@ -19,10 +19,21 @@ const api = async (url, method = 'GET', body = null) => {
   const res = await fetch(`${BASE_URL}${url}`, options)
 
   if (res.status === 401 || res.status === 403) {
+    const err = await res.json().catch(() => null)
+    const detail = err?.detail
+    // detail is a plain string for most 401s (bad password, missing API
+    // key); the session-auth dependency sends {message, reason} so the
+    // login page can tell "signed out elsewhere" apart from "never logged in".
+    const message = (typeof detail === 'string' ? detail : detail?.message) || 'Unauthorized'
+    const reason = typeof detail === 'object' ? detail?.reason : null
+
     if (window.location.pathname !== '/login') {
+      if (reason === 'session_replaced') {
+        try { sessionStorage.setItem('kisna_logout_reason', reason) } catch { /* ignore */ }
+      }
       window.location.href = '/login'
     }
-    throw new Error('Unauthorized')
+    throw new Error(message)
   }
 
   if (!res.ok) {

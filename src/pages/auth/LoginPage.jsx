@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { login } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
@@ -22,6 +22,15 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
   const { refresh } = useAuth()
+
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem('kisna_logout_reason') === 'session_replaced') {
+        sessionStorage.removeItem('kisna_logout_reason')
+        toast.error('You were signed out — this account was logged in elsewhere.')
+      }
+    } catch { /* ignore */ }
+  }, [])
 
   async function handleSubmit(e) {
     e.preventDefault()
