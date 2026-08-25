@@ -1,11 +1,11 @@
 import { useEffect, useCallback, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Users, MessageSquare, Store, AlertTriangle, Star, Zap, ArrowUpRight, TrendingUp, TrendingDown, X, RefreshCw } from 'lucide-react'
+import { Users, MessageSquare, PhoneCall, Video, AlertTriangle, Star, Zap, ArrowUpRight, TrendingUp, TrendingDown, X, RefreshCw } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
-import { getDashboardStats, getUserGrowth, getStoreVisitGrowth } from '@/lib/api'
+import { getDashboardStats, getUserGrowth, getCallbackGrowth } from '@/lib/api'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { BRAND_COLORS, statIconClasses } from '@/components/charts/brandChartTheme'
 
@@ -289,9 +289,9 @@ export default function Overview() {
 
   const [stats, setStats] = useState(null)
   const [userGrowth, setUserGrowth] = useState(null)
-  const [storeVisitGrowth, setStoreVisitGrowth] = useState(null)
+  const [callbackGrowth, setCallbackGrowth] = useState(null)
   const [userGrowthUnavailable, setUserGrowthUnavailable] = useState(false)
-  const [storeGrowthUnavailable, setStoreGrowthUnavailable] = useState(false)
+  const [callbackGrowthUnavailable, setCallbackGrowthUnavailable] = useState(false)
   const [loading, setLoading] = useState(true)
   const [lastSync, setLastSync] = useState(null)
   const intervalRef = useRef(null)
@@ -301,25 +301,25 @@ export default function Overview() {
     const growthPeriod = mapGrowthPeriod(period)
 
     try {
-      const [statsData, userGrowthRes, storeGrowthRes] = await Promise.all([
+      const [statsData, userGrowthRes, callbackGrowthRes] = await Promise.all([
         getDashboardStats({ period }),
         getUserGrowth(growthPeriod).catch(() => null),
-        getStoreVisitGrowth(growthPeriod).catch(() => null),
+        getCallbackGrowth(growthPeriod).catch(() => null),
       ])
 
       setStats(statsData)
       setLastSync(new Date())
 
       setUserGrowth(userGrowthRes?.data ?? null)
-      setStoreVisitGrowth(storeGrowthRes?.data ?? null)
+      setCallbackGrowth(callbackGrowthRes?.data ?? null)
       setUserGrowthUnavailable(userGrowthRes == null)
-      setStoreGrowthUnavailable(storeGrowthRes == null)
+      setCallbackGrowthUnavailable(callbackGrowthRes == null)
     } catch {
       setStats(null)
       setUserGrowth(null)
-      setStoreVisitGrowth(null)
+      setCallbackGrowth(null)
       setUserGrowthUnavailable(true)
-      setStoreGrowthUnavailable(true)
+      setCallbackGrowthUnavailable(true)
     } finally {
       setLoading(false)
     }
@@ -364,7 +364,8 @@ export default function Overview() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard label="Users" description="WhatsApp conversations" icon={Users} href="/users" color={statIconClasses('primary')} count={stats?.total_users} loading={loading} />
         <StatCard label="Messages" description={stats ? `${stats.avg_messages_per_user?.toFixed(1) ?? '—'} avg per user` : 'Avg per user'} icon={MessageSquare} color={statIconClasses('soft')} count={stats?.total_messages} loading={loading} />
-        <StatCard label="Store Visit Requests" description="Jewellery store visit requests" icon={Store} color={statIconClasses('deep')} count={stats?.total_store_visits} loading={loading} />
+        <StatCard label="Callbacks" description="Callback requests scheduled" icon={PhoneCall} href="/callbacks?filter=callback" color={statIconClasses('deep')} count={stats?.total_callbacks} loading={loading} />
+        <StatCard label="Video Calls" description="Video call requests scheduled" icon={Video} href="/callbacks?filter=video_call" color={statIconClasses('soft')} count={stats?.total_video_calls} loading={loading} />
         <StatCard label="Complaints" description="Complaints filed via WhatsApp" icon={AlertTriangle} href="/complaints" color={statIconClasses('danger')} count={stats?.total_complaints} loading={loading} />
         <StatCard label="AI Response Time" description="Average across all messages" icon={Zap} color={statIconClasses('warning')} count={loading ? null : formatResponseTime(stats?.avg_ai_response_time_ms)} loading={loading} />
         <RatingsCard ratings={stats?.ratings} loading={loading} />
@@ -372,7 +373,7 @@ export default function Overview() {
           <GrowthCard title="User Growth" icon={Users} iconBg={statIconClasses('primary')} barColor={BRAND_COLORS.primary} data={userGrowth} loading={loading} unavailable={userGrowthUnavailable} />
         </div>
         <div className="col-span-full">
-          <GrowthCard title="Store Visit Growth" icon={Store} iconBg={statIconClasses('soft')} barColor={BRAND_COLORS.soft} data={storeVisitGrowth} loading={loading} unavailable={storeGrowthUnavailable} />
+          <GrowthCard title="Calls Scheduled Growth" icon={PhoneCall} iconBg={statIconClasses('deep')} barColor={BRAND_COLORS.deep} data={callbackGrowth} loading={loading} unavailable={callbackGrowthUnavailable} />
         </div>
       </div>
     </div>

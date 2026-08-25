@@ -80,6 +80,12 @@ export const getStoreVisitGrowth = (period = 'month') => {
   return api(`/system/dashboard/store-visits/growth?${q.toString()}`)
 }
 
+export const getCallbackGrowth = (period = 'month') => {
+  const q = withClientId()
+  q.set('period', period)
+  return api(`/system/dashboard/callbacks/growth?${q.toString()}`)
+}
+
 // ---------------- USERS ----------------
 export const listUsers = (page = 1, limit = 20, agentRequested = false) => {
   const q = withClientId()

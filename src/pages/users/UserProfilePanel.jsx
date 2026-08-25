@@ -1,4 +1,5 @@
-import { User, Clock, Gem, X } from 'lucide-react'
+import { useState } from 'react'
+import { User, Clock, Gem, X, ChevronDown } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { safeFormatDate } from './utils'
@@ -23,6 +24,91 @@ function formatPrice(price) {
   }
   if (typeof price === 'number') return `₹${price.toLocaleString('en-IN')}`
   return String(price)
+}
+
+// Live session flags that explain the bot's current behaviour. All of this was
+// already in the /system/user response and was being fetched then discarded.
+const SESSION_FIELDS = [
+  ['service_selected', 'Service'],
+  ['language_override', 'Language lock'],
+  ['pending_search', 'Pending search'],
+  ['pending_clarification', 'Pending clarification'],
+  ['awaiting_rating', 'Awaiting rating'],
+  ['shopping_wizard_active', 'Wizard active'],
+  ['shopping_wizard_step', 'Wizard step'],
+  ['callback_capture_step', 'Callback step'],
+]
+
+function renderValue(value) {
+  if (value === true) return 'yes'
+  if (value === false) return 'no'
+  if (value == null || value === '') return null
+  if (typeof value === 'object') return JSON.stringify(value)
+  return String(value)
+}
+
+function SessionStateSection({ userData }) {
+  const [open, setOpen] = useState(false)
+
+  const rows = SESSION_FIELDS
+    .map(([key, label]) => [label, renderValue(userData[key])])
+    .filter(([, value]) => value != null)
+
+  const filters = userData.last_search_filters
+  const takeover = userData.human_takeover
+  const stats = userData.stats || {}
+  const avgMs = stats.response_count
+    ? Math.round(stats.total_response_time_ms / stats.response_count)
+    : null
+
+  if (takeover?.active) {
+    rows.unshift(['Human takeover', `active${takeover.taken_by ? ` — ${takeover.taken_by}` : ''}`])
+  }
+  if (userData.live_agent_required) {
+    rows.unshift(['Agent requested', safeFormatDate(userData.live_agent_requested_at) || 'yes'])
+  }
+  if (avgMs != null) {
+    rows.push(['Avg response', `${avgMs} ms over ${stats.response_count} replies`])
+  }
+
+  const hasFilters = filters && Object.keys(filters).length > 0
+  if (!rows.length && !hasFilters) return null
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="flex w-full items-center justify-between gap-2 mb-2"
+      >
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+          Session State
+        </span>
+        <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="space-y-2 rounded-lg border bg-muted/30 p-3">
+          {rows.map(([label, value]) => (
+            <div key={label} className="flex justify-between gap-3 text-xs">
+              <span className="text-muted-foreground shrink-0">{label}</span>
+              <span className="font-medium text-right break-words min-w-0">{value}</span>
+            </div>
+          ))}
+          {hasFilters && (
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+                Last search filters
+              </p>
+              <pre className="max-h-40 overflow-auto rounded bg-zinc-950 p-2 text-[10px] text-zinc-100">
+                {JSON.stringify(filters, null, 2)}
+              </pre>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function UserProfilePanel({ userData, onClose }) {
@@ -124,6 +210,8 @@ export default function UserProfilePanel({ userData, onClose }) {
             </div>
           </div>
         )}
+        {/* Session state — why the bot is behaving the way it is right now */}
+        <SessionStateSection userData={userData} />
       </div>
     </div>
   )

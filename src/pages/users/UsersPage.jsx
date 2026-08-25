@@ -46,6 +46,36 @@ function formatJewelleryProfileBanner(profile) {
   return parts.join(' · ')
 }
 
+// The same message reaches us in two shapes: the paginated /chat-history rows
+// carry an _id, while optimistic SSE appends and the embedded user.chat_history
+// window do not. Keying on _id alone therefore never matched the two copies and
+// rendered the message twice. Match on _id OR on a normalised content key.
+const normRole = (role) => (role === 'agent' ? 'assistant' : role)
+const contentKey = (msg) =>
+  `${normRole(msg.role)}|${Math.floor(msg.timestamp || 0)}|${(msg.content || '').trim()}`
+
+const mergeHistoryUnique = (older, newer) => {
+  const seen = new Set()
+  const byContent = new Map()
+  const out = []
+  for (const msg of [...older, ...newer]) {
+    const ck = contentKey(msg)
+    if (msg._id && seen.has(msg._id)) continue
+    if (seen.has(ck)) {
+      // Same message, richer copy: the _id-bearing row also carries
+      // request_id, which the Details button needs. Upgrade in place.
+      const idx = byContent.get(ck)
+      if (idx != null && msg._id && !out[idx]._id) out[idx] = msg
+      continue
+    }
+    seen.add(ck)
+    if (msg._id) seen.add(msg._id)
+    byContent.set(ck, out.length)
+    out.push(msg)
+  }
+  return out
+}
+
 export default function UsersPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const search = searchParams.get('search') || ''
@@ -122,18 +152,6 @@ export default function UsersPage() {
     }
   }, [])
 
-  const mergeHistoryUnique = (older, newer) => {
-    const seen = new Set()
-    const out = []
-    for (const msg of [...older, ...newer]) {
-      const key = msg._id || `${msg.role}|${msg.timestamp}|${msg.content}`
-      if (seen.has(key)) continue
-      seen.add(key)
-      out.push(msg)
-    }
-    return out
-  }
-
   const loadOlderMessages = useCallback(async () => {
     if (!activePhone || loadingOlderRef.current || !hasMoreHistory) return
     const history = userMap[activePhone]?.chat_history || []
@@ -163,7 +181,10 @@ export default function UsersPage() {
             ...prev,
             [activePhone]: {
               ...existing,
-              chat_history: mergeHistoryUnique(older, existing.chat_history || []),
+              chat_history: mergeHistoryUnique(
+                older,
+                existing.chat_history || [],
+              ).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0)),
             },
           }
         })
@@ -254,6 +275,13 @@ export default function UsersPage() {
   useEffect(() => {
     if (!activePhone) return
 
+    // StrictMode mounts effects twice in dev. Without this guard the first
+    // mount's in-flight response lands after the second mount has already
+    // resolved, replaying an older history over the newer one.
+    let cancelled = false
+    let reconnectTimer = null
+    let retries = 0
+
     const fetchUser = () => {
       setLoadingActive(true)
       Promise.all([
@@ -261,6 +289,7 @@ export default function UsersPage() {
         getChatHistory(activePhone, { limit: 50 }),
       ])
         .then(([data, historyPage]) => {
+          if (cancelled) return
           const messages = historyPage?.messages || historyPage?.chat_history || data.chat_history || []
           setHasMoreHistory(Boolean(historyPage?.has_more))
           if (!historyPage?.has_more) setBeginningReached(true)
@@ -275,61 +304,95 @@ export default function UsersPage() {
           setTakeover(activePhone, data.human_takeover?.active ?? false, data.human_takeover?.taken_by ?? null)
         })
         .catch(() => {})
-        .finally(() => setLoadingActive(false))
+        .finally(() => {
+          if (!cancelled) setLoadingActive(false)
+        })
     }
     fetchUser()
 
     const token = getToken()
     const baseUrl = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_URL || '')
-    const es = new EventSource(
-      `${baseUrl}/system/conversation/${activePhone}/stream${token ? `?token=${token}` : ''}`
-    )
-    sseRef.current = es
 
-    es.onmessage = (e) => {
-      try {
-        const event = JSON.parse(e.data)
-        switch (event.type) {
-          case 'connected':
-            break
-
-          // User replies (only pushed when takeover is active)
-          case 'user_message':
-            setUserMap(prev => {
-              const user = prev[activePhone] || {}
-              return { ...prev, [activePhone]: { ...user, chat_history: [...(user.chat_history || []), { role: 'user', content: event.content, timestamp: event.timestamp ?? Date.now() / 1000 }] } }
-            })
-            break
-
-          // Agent messages + takeover/release system messages
-          case 'agent_message':
-            setUserMap(prev => {
-              const user = prev[activePhone] || {}
-              return { ...prev, [activePhone]: { ...user, chat_history: [...(user.chat_history || []), { role: 'agent', content: event.content, timestamp: event.timestamp ?? Date.now() / 1000 }] } }
-            })
-            break
-
-          case 'takeover':
-            setTakeover(activePhone, true)
-            fetchUser()
-            break
-
-          case 'release':
-            setTakeover(activePhone, false)
-            toast.success('Agent handed back to bot')
-            fetchUser()
-            break
-        }
-      } catch {}
+    let es = null
+    const connect = () => {
+      if (cancelled) return
+      es = new EventSource(
+        `${baseUrl}/system/conversation/${activePhone}/stream${token ? `?token=${token}` : ''}`
+      )
+      sseRef.current = es
+      wireHandlers()
     }
 
-    es.onerror = () => {
-      fetchUser()
-      es.close()
+    function wireHandlers() {
+      es.onmessage = (e) => {
+        if (cancelled) return
+        try {
+          const event = JSON.parse(e.data)
+          // Server sends the timestamp it actually persisted; flooring keeps the
+          // optimistic copy's dedup key identical to the saved row's.
+          const ts = Math.floor(event.timestamp ?? Date.now() / 1000)
+          const append = (role, content) => {
+            setUserMap(prev => {
+              const user = prev[activePhone] || {}
+              return {
+                ...prev,
+                [activePhone]: {
+                  ...user,
+                  chat_history: mergeHistoryUnique(user.chat_history || [], [
+                    { role, content, timestamp: ts },
+                  ]),
+                },
+              }
+            })
+          }
+
+          switch (event.type) {
+            case 'connected':
+              retries = 0
+              break
+
+            // User replies (only pushed when takeover is active)
+            case 'user_message':
+              append('user', event.content)
+              break
+
+            // Agent messages sent from the dashboard
+            case 'agent_message':
+              append('agent', event.content)
+              break
+
+            case 'takeover':
+              setTakeover(activePhone, true)
+              fetchUser()
+              break
+
+            case 'release':
+              setTakeover(activePhone, false)
+              toast.success('Agent handed back to bot')
+              fetchUser()
+              break
+          }
+        } catch {}
+      }
+
+      es.onerror = () => {
+        es.close()
+        if (cancelled) return
+        // Reconnect with backoff. Previously the stream closed for good on the
+        // first blip, silently degrading the page to the 5s poller.
+        fetchUser()
+        const delay = Math.min(1000 * 2 ** retries, 30_000)
+        retries += 1
+        reconnectTimer = setTimeout(connect, delay)
+      }
     }
+
+    connect()
 
     return () => {
-      es.close()
+      cancelled = true
+      if (reconnectTimer) clearTimeout(reconnectTimer)
+      if (es) es.close()
       sseRef.current = null
     }
   }, [activePhone])
@@ -345,35 +408,20 @@ export default function UsersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userMap, scrollToBottom])
 
-  const handleSelectUser = useCallback(async (phone) => {
+  // Only sets the active conversation. Fetching is owned solely by the
+  // [activePhone] effect below — having this fetch too raced it and planted the
+  // embedded (_id-less) chat_history, which then merged as duplicates.
+  const handleSelectUser = useCallback((phone) => {
     setActivePhone(phone)
     setAgentInput('')
     setSearchParams(prev => { const p = new URLSearchParams(prev); p.set('phone', phone); return p }, { replace: true })
-    if (!userMap[phone]) {
-      setLoadingActive(true)
-      try {
-        const data = await getUserByPhone(phone)
-        setUserMap(prev => ({ ...prev, [phone]: data }))
-      } catch {
-      } finally {
-        setLoadingActive(false)
-      }
-    }
-  }, [userMap, setSearchParams])
+  }, [setSearchParams])
 
-  // Open chat when ?phone= is present in URL (e.g. direct link or page refresh)
+  // Open chat when ?phone= is present in URL (e.g. direct link or page refresh).
+  // Sets the active phone only; the [activePhone] effect does the fetching.
   useEffect(() => {
     const phone = searchParams.get('phone')
-    if (phone && phone !== activePhone) {
-      setActivePhone(phone)
-      if (!userMap[phone]) {
-        setLoadingActive(true)
-        getUserByPhone(phone)
-          .then(data => setUserMap(prev => ({ ...prev, [phone]: data })))
-          .catch(() => {})
-          .finally(() => setLoadingActive(false))
-      }
-    }
+    if (phone && phone !== activePhone) setActivePhone(phone)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
