@@ -67,10 +67,12 @@ function StatusBadge({ status }) {
   )
 }
 
+const COLUMN_COUNT = 10
+
 function RowSkeleton() {
   return (
     <tr className="border-b">
-      {[1, 2, 3, 4, 5, 6, 7].map(i => (
+      {Array.from({ length: COLUMN_COUNT }).map((_, i) => (
         <td key={i} className="px-4 py-3"><Skeleton className="h-4 w-full" /></td>
       ))}
     </tr>
@@ -119,6 +121,9 @@ export default function ComplaintsPage() {
               <tr className="border-b bg-[rgb(var(--mist-rgb)/0.6)]">
                 <th className="px-4 py-3 text-left text-xs uppercase tracking-wider">Customer</th>
                 <th className="px-4 py-3 text-left text-xs uppercase tracking-wider">Order ID</th>
+                <th className="px-4 py-3 text-left text-xs uppercase tracking-wider">Reg. Mobile</th>
+                <th className="px-4 py-3 text-left text-xs uppercase tracking-wider">Reg. Email/Contact</th>
+                <th className="px-4 py-3 text-left text-xs uppercase tracking-wider">Invoice No.</th>
                 <th className="px-4 py-3 text-left text-xs uppercase tracking-wider">Case ID</th>
                 <th className="px-4 py-3 text-left text-xs uppercase tracking-wider">Type</th>
                 <th className="px-4 py-3 text-left text-xs uppercase tracking-wider">Status</th>
@@ -131,7 +136,7 @@ export default function ComplaintsPage() {
                 Array.from({ length: 8 }).map((_, i) => <RowSkeleton key={i} />)
               ) : complaints.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-16 text-center text-muted-foreground">
+                  <td colSpan={COLUMN_COUNT} className="px-4 py-16 text-center text-muted-foreground">
                     <AlertTriangle className="h-8 w-8 mx-auto mb-2 opacity-40" />
                     No complaints found.
                   </td>
@@ -152,6 +157,15 @@ export default function ComplaintsPage() {
                     </td>
                     <td className="px-4 py-3 font-mono text-xs cell-muted">
                       {c.order_id || '—'}
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs cell-muted whitespace-nowrap">
+                      {c.registered_mobile || '—'}
+                    </td>
+                    <td className="px-4 py-3 text-xs cell-muted whitespace-nowrap">
+                      {c.registered_contact || '—'}
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs cell-muted whitespace-nowrap">
+                      {c.invoice_number || '—'}
                     </td>
                     <td className="px-4 py-3 font-mono text-xs cell-muted">
                       {c.case_id || c.case_no || '—'}
