@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { listComplaints } from '@/lib/api'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -68,6 +68,41 @@ function StatusBadge({ status }) {
 }
 
 const COLUMN_COUNT = 10
+
+// Description can carry the full issue text plus an appended "Contact details
+// provided:" block. Show two lines, with a toggle to read the rest.
+function ComplaintDescription({ text }) {
+  const [expanded, setExpanded] = useState(false)
+  const [clamped, setClamped] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const el = ref.current
+    if (el) setClamped(el.scrollHeight > el.clientHeight + 1)
+  }, [text])
+
+  if (!text) return <span className="text-xs cell-muted">—</span>
+
+  return (
+    <div className="max-w-xs">
+      <p
+        ref={ref}
+        className={`text-xs cell-muted ${expanded ? 'whitespace-pre-line' : 'line-clamp-2'}`}
+      >
+        {text}
+      </p>
+      {(clamped || expanded) && (
+        <button
+          type="button"
+          onClick={() => setExpanded(v => !v)}
+          className="mt-0.5 text-[11px] font-medium text-primary hover:underline"
+        >
+          {expanded ? 'Show less' : 'Show more'}
+        </button>
+      )}
+    </div>
+  )
+}
 
 function RowSkeleton() {
   return (
@@ -176,8 +211,8 @@ export default function ComplaintsPage() {
                     <td className="px-4 py-3">
                       <StatusBadge status={c.status} />
                     </td>
-                    <td className="px-4 py-3 max-w-xs">
-                      <p className="text-xs cell-muted line-clamp-2">{c.issue || c.issue_description || '—'}</p>
+                    <td className="px-4 py-3 max-w-xs align-top">
+                      <ComplaintDescription text={c.issue || c.issue_description || ''} />
                     </td>
                     <td className="px-4 py-3 text-[11px] cell-muted whitespace-nowrap">
                       {safeFormatDate(c.created_at)}
