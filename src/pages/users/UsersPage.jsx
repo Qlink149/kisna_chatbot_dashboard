@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import notificationSound from '@/assets/notification_sound.mp3'
 import { useSearchParams } from 'react-router-dom'
-import { listUsers, searchUsers, getUserByPhone, getChatHistory, takeoverConversation, sendAgentMessage, releaseConversation, resolveAgentRequest } from '@/lib/api'
+import { listUsers, searchUsers, getUserByPhone, getChatHistory, takeoverConversation, sendAgentMessage, sendAgentMedia, releaseConversation, resolveAgentRequest } from '@/lib/api'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { isWindowExpired as checkWindowExpired } from './utils'
@@ -51,8 +51,11 @@ function formatJewelleryProfileBanner(profile) {
 // window do not. Keying on _id alone therefore never matched the two copies and
 // rendered the message twice. Match on _id OR on a normalised content key.
 const normRole = (role) => (role === 'agent' ? 'assistant' : role)
+// A media message often has empty/short content ("[Image]"), so two
+// different media messages sent in the same second would collide on content
+// alone -- fold in the storage key, which is unique per file.
 const contentKey = (msg) =>
-  `${normRole(msg.role)}|${Math.floor(msg.timestamp || 0)}|${(msg.content || '').trim()}`
+  `${normRole(msg.role)}|${Math.floor(msg.timestamp || 0)}|${(msg.content || '').trim()}|${msg.media?.r2_key || ''}`
 
 const mergeHistoryUnique = (older, newer) => {
   const seen = new Set()
@@ -109,6 +112,7 @@ export default function UsersPage() {
   const [takeoverMap, setTakeoverMap] = useState({}) // { [phone]: { active, takenBy } }
   const [agentInput, setAgentInput] = useState('')
   const [sendingMessage, setSendingMessage] = useState(false)
+  const [sendingMedia, setSendingMedia] = useState(false)
   const [takingOver, setTakingOver] = useState(false)
   const [releasing, setReleasing] = useState(false)
   const [resolvingAgent, setResolvingAgent] = useState(false)
@@ -331,7 +335,7 @@ export default function UsersPage() {
           // Server sends the timestamp it actually persisted; flooring keeps the
           // optimistic copy's dedup key identical to the saved row's.
           const ts = Math.floor(event.timestamp ?? Date.now() / 1000)
-          const append = (role, content) => {
+          const append = (role, content, media) => {
             setUserMap(prev => {
               const user = prev[activePhone] || {}
               return {
@@ -339,7 +343,7 @@ export default function UsersPage() {
                 [activePhone]: {
                   ...user,
                   chat_history: mergeHistoryUnique(user.chat_history || [], [
-                    { role, content, timestamp: ts },
+                    { role, content, timestamp: ts, media: media || null },
                   ]),
                 },
               }
@@ -353,12 +357,12 @@ export default function UsersPage() {
 
             // User replies (only pushed when takeover is active)
             case 'user_message':
-              append('user', event.content)
+              append('user', event.content, event.media)
               break
 
             // Agent messages sent from the dashboard
             case 'agent_message':
-              append('agent', event.content)
+              append('agent', event.content, event.media)
               break
 
             case 'takeover':
@@ -498,6 +502,18 @@ export default function UsersPage() {
     }
   }
 
+  const handleSendMedia = async (file, caption) => {
+    if (sendingMedia) return
+    setSendingMedia(true)
+    try {
+      await sendAgentMedia(activePhone, file, caption)
+    } catch (err) {
+      toast.error(err.message || 'Failed to send file')
+    } finally {
+      setSendingMedia(false)
+    }
+  }
+
   const isXl = useMediaQuery('(min-width: 1280px)')
 
   const handleBackToList = useCallback(() => {
@@ -594,6 +610,8 @@ export default function UsersPage() {
               onAgentInputChange={setAgentInput}
               sendingMessage={sendingMessage}
               onSendMessage={handleSendMessage}
+              sendingMedia={sendingMedia}
+              onSendMedia={handleSendMedia}
             />
           )}
         </div>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Copy, Info, Loader2, Sparkles, User, MessageSquare, ChevronDown } from 'lucide-react'
+import { Copy, Download, FileText, Info, Loader2, Sparkles, User, MessageSquare, ChevronDown, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
@@ -590,6 +590,104 @@ function TracePanel({ requestId, onClose }) {
   )
 }
 
+function MediaCaption({ text }) {
+  if (!text) return null
+  return (
+    <div className="mt-1 whitespace-pre-wrap break-words text-xs leading-relaxed [overflow-wrap:anywhere]">
+      {renderMessageContent(text)}
+    </div>
+  )
+}
+
+function ImageLightbox({ src, onClose }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+      onClick={onClose}
+      role="presentation"
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute top-4 right-4 rounded-full bg-black/40 p-1.5 text-white/90 hover:text-white"
+        aria-label="Close"
+      >
+        <X className="h-5 w-5" />
+      </button>
+      <img
+        src={src}
+        alt="Attachment"
+        className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
+        onClick={(e) => e.stopPropagation()}
+      />
+    </div>
+  )
+}
+
+// Renders an inbound or outbound media attachment -- image (thumbnail +
+// lightbox), audio/video (native player), or document (download chip). A
+// signed URL that has expired (past the B2 retention window, or the presign
+// TTL lapsed before the viewer opened it) degrades to a placeholder instead
+// of a broken-media icon.
+function MediaBlock({ media }) {
+  const [expired, setExpired] = useState(false)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+
+  if (!media) return null
+
+  if (!media.url || expired) {
+    return (
+      <div className="flex items-center gap-2 rounded-lg border border-dashed border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+        Media unavailable
+      </div>
+    )
+  }
+
+  if (media.kind === 'image') {
+    return (
+      <div className="min-w-0">
+        <img
+          src={media.url}
+          alt={media.caption || 'Image'}
+          className="max-h-64 max-w-full rounded-lg object-cover cursor-pointer"
+          onClick={() => setLightboxOpen(true)}
+          onError={() => setExpired(true)}
+        />
+        <MediaCaption text={media.caption} />
+        {lightboxOpen && <ImageLightbox src={media.url} onClose={() => setLightboxOpen(false)} />}
+      </div>
+    )
+  }
+
+  if (media.kind === 'audio') {
+    return <audio controls className="max-w-full" src={media.url} onError={() => setExpired(true)} />
+  }
+
+  if (media.kind === 'video') {
+    return (
+      <div className="min-w-0">
+        <video controls className="max-h-64 max-w-full rounded-lg" src={media.url} onError={() => setExpired(true)} />
+        <MediaCaption text={media.caption} />
+      </div>
+    )
+  }
+
+  // document
+  return (
+    <a
+      href={media.url}
+      target="_blank"
+      rel="noreferrer"
+      download
+      className="flex min-w-0 items-center gap-2 rounded-lg border border-border bg-background/60 px-3 py-2 hover:bg-background transition-colors"
+    >
+      <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+      <span className="min-w-0 flex-1 truncate text-xs font-medium">{media.filename || 'Document'}</span>
+      <Download className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+    </a>
+  )
+}
+
 function MessageBubble({ msg, outcomeHint, onOpenTrace }) {
   const isBot = msg.role === 'assistant'
   const showDetails = isBot && !!msg.request_id
@@ -638,9 +736,13 @@ function MessageBubble({ msg, outcomeHint, onOpenTrace }) {
             Live Agent
           </p>
         )}
-        <div className="whitespace-pre-wrap break-words leading-relaxed [overflow-wrap:anywhere]">
-          {renderMessageContent(msg.content)}
-        </div>
+        {msg.media ? (
+          <MediaBlock media={msg.media} />
+        ) : (
+          <div className="whitespace-pre-wrap break-words leading-relaxed [overflow-wrap:anywhere]">
+            {renderMessageContent(msg.content)}
+          </div>
+        )}
         <div className="mt-1 flex items-center justify-end gap-2">
           {showDetails && (
             <button

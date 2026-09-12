@@ -6,18 +6,10 @@ const withClientId = (params = new URLSearchParams()) => {
   return params
 }
 
-const api = async (url, method = 'GET', body = null) => {
-  const options = {
-    method,
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  }
-  if (body) options.body = JSON.stringify(body)
-
-  const res = await fetch(`${BASE_URL}${url}`, options)
-
+// Shared by every call below: JSON requests via `api()` and the multipart
+// media upload via `apiUpload()`, both funnel their fetch Response through
+// this so the 401/403 redirect and error-shape handling stay in one place.
+const handleApiResponse = async (res) => {
   if (res.status === 401 || res.status === 403) {
     const err = await res.json().catch(() => null)
     const detail = err?.detail
@@ -42,6 +34,31 @@ const api = async (url, method = 'GET', body = null) => {
   }
   if (res.status === 204) return null
   return res.json()
+}
+
+const api = async (url, method = 'GET', body = null) => {
+  const options = {
+    method,
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  }
+  if (body) options.body = JSON.stringify(body)
+
+  const res = await fetch(`${BASE_URL}${url}`, options)
+  return handleApiResponse(res)
+}
+
+// Multipart upload -- can't go through api(): that hardcodes JSON. Omit
+// Content-Type entirely so the browser sets the multipart boundary itself.
+const apiUpload = async (url, formData) => {
+  const res = await fetch(`${BASE_URL}${url}`, {
+    method: 'POST',
+    credentials: 'include',
+    body: formData,
+  })
+  return handleApiResponse(res)
 }
 
 // ---------------- SYSTEM ----------------
@@ -127,6 +144,14 @@ export const takeoverConversation = (phone, takenBy) =>
 
 export const sendAgentMessage = (phone, message) =>
   api(`/system/conversation/${phone}/send`, 'POST', { message })
+
+export const sendAgentMedia = (phone, file, caption) => {
+  const q = withClientId()
+  const form = new FormData()
+  form.append('file', file)
+  if (caption) form.append('caption', caption)
+  return apiUpload(`/system/conversation/${phone}/send-media?${q.toString()}`, form)
+}
 
 export const releaseConversation = (phone) =>
   api(`/system/conversation/${phone}/release`, 'POST')
