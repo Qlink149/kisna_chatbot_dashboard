@@ -85,14 +85,14 @@ export default function ConversationSidebar({
                 <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 border ${
                   user.live_agent_required
                     ? 'bg-yellow-50 dark:bg-yellow-950/30 border-yellow-300 dark:border-yellow-700'
-                    : isWindowExpired(user.updated_at)
+                    : isWindowExpired(user)
                       ? 'bg-muted border-border'
                       : 'border-[rgb(var(--violet-rgb)/0.18)] bg-[rgb(var(--violet-rgb)/0.08)]'
                 }`}>
                   <User className={`h-5 w-5 ${
                     user.live_agent_required
                       ? 'text-yellow-500'
-                      : isWindowExpired(user.updated_at)
+                      : isWindowExpired(user)
                         ? 'text-muted-foreground'
                         : 'text-[var(--violet)]'
                   }`} />
@@ -116,7 +116,7 @@ export default function ConversationSidebar({
                           Agent Req
                         </span>
                       )}
-                      {isWindowExpired(user.updated_at) ? (
+                      {isWindowExpired(user) ? (
                         <span className="rounded-full border border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-800 px-1.5 py-0 text-[9px] font-medium text-red-500 dark:text-red-400">
                           Closed
                         </span>

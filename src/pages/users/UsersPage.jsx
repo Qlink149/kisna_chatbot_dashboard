@@ -438,7 +438,7 @@ export default function UsersPage() {
   // Server handles filtering; just pin the active user on top if not in list
   const filteredUsers = displayUsers
 
-  const isWindowExpired = checkWindowExpired(activeUserData?.updated_at)
+  const isWindowExpired = checkWindowExpired(activeUserData)
 
   // Takeover / release / send handlers
   const handleTakeover = async () => {
