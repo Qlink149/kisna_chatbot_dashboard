@@ -9,6 +9,8 @@ import Overview from '@/pages/Overview'
 import UsersPage from '@/pages/users/UsersPage'
 import ComplaintsPage from '@/pages/complaints/ComplaintsPage'
 import CallbacksPage from '@/pages/callbacks/CallbacksPage'
+import StoreVisitsPage from '@/pages/store-visits/StoreVisitsPage'
+import StoresPage from '@/pages/stores/StoresPage'
 import LoginPage from '@/pages/auth/LoginPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
@@ -32,6 +34,8 @@ export default function App() {
               <Route path="/users" element={<UsersPage />} />
               <Route path="/complaints" element={<ComplaintsPage />} />
               <Route path="/callbacks" element={<CallbacksPage />} />
+              <Route path="/store-visits" element={<StoreVisitsPage />} />
+              <Route path="/stores" element={<StoresPage />} />
 
               {/* Fallback 404 Route */}
               <Route path="*" element={<NotFoundPage />} />

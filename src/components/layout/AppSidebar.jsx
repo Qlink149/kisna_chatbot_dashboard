@@ -18,6 +18,8 @@ import {
   LogOut,
   AlertTriangle,
   Phone,
+  MapPin,
+  Store,
 } from 'lucide-react'
 
 const navGroups = [
@@ -28,6 +30,8 @@ const navGroups = [
       { to: '/users', label: 'Users', icon: Users },
       { to: '/complaints', label: 'Complaints', icon: AlertTriangle },
       { to: '/callbacks', label: 'Callbacks', icon: Phone },
+      { to: '/store-visits', label: 'Store Visits', icon: MapPin },
+      { to: '/stores', label: 'Stores', icon: Store },
     ],
   },
 ]

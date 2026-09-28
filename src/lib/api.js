@@ -186,3 +186,67 @@ export const updateCallbackStatus = (requestId, status) => {
   const q = withClientId()
   return api(`/system/callbacks/${requestId}?${q.toString()}`, 'PATCH', { status })
 }
+
+// ---------------- STORE VISITS ----------------
+const storeVisitQuery = (filters = {}) => {
+  const q = withClientId()
+  for (const key of ['status', 'store_id', 'state', 'city', 'date_from', 'date_to', 'q']) {
+    if (filters[key]) q.set(key, filters[key])
+  }
+  return q
+}
+
+export const listStoreVisits = (page = 1, limit = 20, filters = {}) => {
+  const q = storeVisitQuery(filters)
+  q.set('page', String(page))
+  q.set('limit', String(limit))
+  return api(`/system/store-visits?${q.toString()}`)
+}
+
+export const updateStoreVisitStatus = (requestId, status) => {
+  const q = withClientId()
+  return api(`/system/store-visits/${requestId}?${q.toString()}`, 'PATCH', { status })
+}
+
+// CSV downloads need the session cookie, so fetch + blob, not a plain link.
+const downloadCsv = async (url, filename) => {
+  const res = await fetch(`${BASE_URL}${url}`, { credentials: 'include' })
+  if (!res.ok) {
+    await handleApiResponse(res)
+    return
+  }
+  const blob = await res.blob()
+  const href = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = href
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(href)
+}
+
+export const exportStoreVisitsCsv = (filters = {}) =>
+  downloadCsv(`/system/store-visits/export.csv?${storeVisitQuery(filters).toString()}`, 'store_visits.csv')
+
+// ---------------- STORES ----------------
+export const listStores = () => api('/system/stores')
+
+export const updateStoreFlags = (storeId, flags) =>
+  api(`/system/stores/${encodeURIComponent(storeId)}`, 'PATCH', flags)
+
+export const exportStoresCsv = () => downloadCsv('/system/stores/export.csv', 'stores.csv')
+
+// A rejected file comes back as 422 {ok: false, errors: [{row, error}]} --
+// returned as-is (not thrown) so the page can list every row error.
+export const importStoresCsv = async (file) => {
+  const form = new FormData()
+  form.append('file', file)
+  const res = await fetch(`${BASE_URL}/system/stores/import`, {
+    method: 'POST',
+    credentials: 'include',
+    body: form,
+  })
+  if (res.status === 422) return res.json()
+  return handleApiResponse(res)
+}
