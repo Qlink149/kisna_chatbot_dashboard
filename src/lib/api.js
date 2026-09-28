@@ -232,8 +232,15 @@ export const exportStoreVisitsCsv = (filters = {}) =>
 // ---------------- STORES ----------------
 export const listStores = () => api('/system/stores')
 
-export const updateStoreFlags = (storeId, flags) =>
-  api(`/system/stores/${encodeURIComponent(storeId)}`, 'PATCH', flags)
+// Only the dashboard-owned fields: bookable, open_time, close_time,
+// weekly_off. Name / address / city / state / PIN / phone come from kisna.com.
+export const updateStoreOverrides = (storeId, overrides) =>
+  api(`/system/stores/${encodeURIComponent(storeId)}`, 'PATCH', overrides)
+
+export const getStoreSync = () => api('/system/stores/sync')
+
+// Admin only -- runs the same kisna.com sync as the 02:00 IST job.
+export const runStoreSync = () => api('/system/stores/sync', 'POST')
 
 export const exportStoresCsv = () => downloadCsv('/system/stores/export.csv', 'stores.csv')
 
