@@ -1,7 +1,6 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AlertTriangle, Check, FileText, Loader2, Paperclip, Send, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 
 const MAX_MEDIA_BYTES = 20 * 1024 * 1024 // 20 MB, mirrors KISNA_MEDIA_MAX_BYTES server-side
 const ALLOWED_MEDIA_TYPES = new Set([
@@ -34,6 +33,14 @@ export default function AgentFooter({
   onSendMedia,
 }) {
   const fileInputRef = useRef(null)
+  const textareaRef = useRef(null)
+  // Grow with the text (up to max-h-40, then scroll); shrink back after send.
+  useEffect(() => {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [agentInput])
   const [attachedFile, setAttachedFile] = useState(null)
   const [fileError, setFileError] = useState('')
 
@@ -118,7 +125,7 @@ export default function AgentFooter({
           </div>
         </div>
       )}
-      <div className="p-3 flex items-center gap-2">
+      <div className="p-3 flex items-end gap-2">
         <input
           ref={fileInputRef}
           type="file"
@@ -138,16 +145,25 @@ export default function AgentFooter({
         >
           <Paperclip className="h-4 w-4" />
         </Button>
-        <Input
-          className="flex-1 h-10"
-          placeholder={attachedFile ? 'Add a caption (optional)...' : 'Type a message as live agent...'}
+        {/* Enter sends; Shift+Enter inserts a newline. Enter while an IME is
+            composing (Hindi/Gujarati keyboards) only confirms the word. */}
+        <textarea
+          ref={textareaRef}
+          rows={1}
+          className="flex-1 min-h-10 max-h-40 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm leading-5 shadow-sm outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          placeholder={attachedFile ? 'Add a caption (optional)...' : 'Type a message as live agent... (Shift+Enter for a new line)'}
           value={agentInput}
           onChange={e => onAgentInputChange(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
+          onKeyDown={e => {
+            if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+              e.preventDefault()
+              handleSend()
+            }
+          }}
           disabled={busy || isWindowExpired}
         />
         <Button
-          size="icon" className="h-10 w-10 shrink-0 bg-amber-500 hover:bg-amber-600 text-white"
+          size="icon" className="h-10 w-10 shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white"
           onClick={handleSend}
           disabled={!canSend}
         >

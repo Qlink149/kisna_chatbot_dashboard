@@ -701,41 +701,46 @@ function MessageBubble({ msg, outcomeHint, onOpenTrace }) {
       ? 'bg-amber-400'
       : null
 
-  return (
-    <div className={cn('flex w-full min-w-0', msg.role === 'user' ? 'justify-end' : 'justify-start')}>
-      {msg.role === 'assistant' && (
-        <div
-          className="h-7 w-7 rounded-full flex items-center justify-center shrink-0 mr-2 mt-1 shadow-sm border relative"
-          style={{
-            background: 'linear-gradient(to bottom right, rgb(var(--violet-rgb) / 0.15), rgb(var(--royal-rgb) / 0.08))',
-            borderColor: 'rgb(var(--violet-rgb) / 0.12)',
-          }}
-        >
-          <Sparkles className="h-3.5 w-3.5" style={{ color: 'var(--violet)' }} />
-          {problemDot && (
-            <span className={cn('absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full ring-2 ring-white', problemDot)} />
-          )}
-        </div>
-      )}
+  // WhatsApp Business view: the customer on the left, our side (bot and
+  // live agent) on the right; agent replies in WhatsApp green.
+  const isCustomer = msg.role === 'user'
+  const isAgent = msg.role === 'agent'
 
-      {msg.role === 'agent' && (
-        <div className="h-7 w-7 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0 mr-2 mt-1 shadow-sm border border-amber-500/20">
-          <User className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+  const botAvatar = (
+    <div
+      className="h-7 w-7 rounded-full flex items-center justify-center shrink-0 ml-2 mt-1 shadow-sm border relative"
+      style={{
+        background: 'linear-gradient(to bottom right, rgb(var(--violet-rgb) / 0.15), rgb(var(--royal-rgb) / 0.08))',
+        borderColor: 'rgb(var(--violet-rgb) / 0.12)',
+      }}
+    >
+      <Sparkles className="h-3.5 w-3.5" style={{ color: 'var(--violet)' }} />
+      {problemDot && (
+        <span className={cn('absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full ring-2 ring-white', problemDot)} />
+      )}
+    </div>
+  )
+
+  return (
+    <div className={cn('flex w-full min-w-0', isCustomer ? 'justify-start' : 'justify-end')}>
+      {isCustomer && (
+        <div className="h-7 w-7 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center shrink-0 mr-2 mt-1 border border-border">
+          <User className="h-4 w-4 text-zinc-500" />
         </div>
       )}
 
       <div
         className={cn(
           'relative w-fit max-w-[75%] min-w-0 shrink px-3.5 py-2.5 rounded-2xl shadow-sm text-sm group',
-          msg.role === 'user'
+          isCustomer
+            ? 'bg-white dark:bg-[#202c33] text-[#111b21] dark:text-[#e9edef] rounded-tl-none border border-border'
+            : isAgent
             ? 'bg-[#d9fdd3] dark:bg-[#005c4b] text-[#111b21] dark:text-[#e9edef] rounded-tr-none'
-            : msg.role === 'agent'
-            ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-100 rounded-tl-none border border-amber-200 dark:border-amber-800'
-            : 'bg-white text-[var(--text)] rounded-tl-none border border-[rgb(var(--navy-rgb)/0.1)] shadow-sm'
+            : 'bg-[rgb(var(--navy-rgb)/0.04)] text-[var(--text)] rounded-tr-none border border-[rgb(var(--navy-rgb)/0.1)]'
         )}
       >
-        {msg.role === 'agent' && (
-          <p className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 mb-1 uppercase tracking-wider">
+        {isAgent && (
+          <p className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 mb-1 uppercase tracking-wider">
             Live Agent
           </p>
         )}
@@ -763,9 +768,10 @@ function MessageBubble({ msg, outcomeHint, onOpenTrace }) {
         </div>
       </div>
 
-      {msg.role === 'user' && (
-        <div className="h-7 w-7 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center shrink-0 ml-2 mt-1 border border-border">
-          <User className="h-4 w-4 text-zinc-500" />
+      {isBot && botAvatar}
+      {isAgent && (
+        <div className="h-7 w-7 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0 ml-2 mt-1 shadow-sm border border-emerald-500/20">
+          <User className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" />
         </div>
       )}
     </div>
