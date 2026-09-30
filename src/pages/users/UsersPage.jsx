@@ -46,38 +46,34 @@ function formatJewelleryProfileBanner(profile) {
   return parts.join(' · ')
 }
 
-// The same message reaches us in two shapes: the paginated /chat-history rows
-// carry an _id, while optimistic SSE appends and the embedded user.chat_history
-// window do not. Keying on _id alone therefore never matched the two copies and
-// rendered the message twice. Match on _id OR on a normalised content key.
-const normRole = (role) => (role === 'agent' ? 'assistant' : role)
-// A media message often has empty/short content ("[Image]"), so two
-// different media messages sent in the same second would collide on content
-// alone -- fold in the storage key, which is unique per file.
-const contentKey = (msg) =>
-  `${normRole(msg.role)}|${Math.floor(msg.timestamp || 0)}|${(msg.content || '').trim()}|${msg.media?.r2_key || ''}`
-
+// De-duplicate by message id only. Every /chat-history row and every live
+// (SSE) message carries the saved chat_messages _id, so two copies of one
+// message always share it. Two different messages with the same sender,
+// second and text are both kept. A message without an id is kept as is.
+// A later copy of a known id is merged in place: it may carry more (the
+// server row's request_id / trace_outcome, a fresh media URL).
 const mergeHistoryUnique = (older, newer) => {
-  const seen = new Set()
-  const byContent = new Map()
   const out = []
+  const at = new Map()
   for (const msg of [...older, ...newer]) {
-    const ck = contentKey(msg)
-    if (msg._id && seen.has(msg._id)) continue
-    if (seen.has(ck)) {
-      // Same message, richer copy: the _id-bearing row also carries
-      // request_id, which the Details button needs. Upgrade in place.
-      const idx = byContent.get(ck)
-      if (idx != null && msg._id && !out[idx]._id) out[idx] = msg
+    if (!msg._id) {
+      out.push(msg)
       continue
     }
-    seen.add(ck)
-    if (msg._id) seen.add(msg._id)
-    byContent.set(ck, out.length)
-    out.push(msg)
+    const idx = at.get(msg._id)
+    if (idx == null) {
+      at.set(msg._id, out.length)
+      out.push(msg)
+    } else {
+      out[idx] = { ...out[idx], ...msg }
+    }
   }
   return out
 }
+
+// Oldest first; the _id breaks same-second ties the way the server pages them.
+const byTime = (a, b) =>
+  (a.timestamp || 0) - (b.timestamp || 0) || String(a._id || '').localeCompare(String(b._id || ''))
 
 export default function UsersPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -185,10 +181,7 @@ export default function UsersPage() {
             ...prev,
             [activePhone]: {
               ...existing,
-              chat_history: mergeHistoryUnique(
-                older,
-                existing.chat_history || [],
-              ).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0)),
+              chat_history: mergeHistoryUnique(older, existing.chat_history || []).sort(byTime),
             },
           }
         })
@@ -255,11 +248,11 @@ export default function UsersPage() {
       ])
         .then(([data, historyPage]) => {
           const serverHistory = historyPage?.messages || historyPage?.chat_history || data.chat_history || []
-          setHasMoreHistory(Boolean(historyPage?.has_more))
+          // hasMore is not touched here: it describes the OLDEST page loaded
+          // (initial fetch / loadOlderMessages), not this latest-50 refresh.
           setUserMap(prev => {
             const existing = prev[activePhone] || {}
-            const merged = mergeHistoryUnique(existing.chat_history || [], serverHistory)
-            merged.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
+            const merged = mergeHistoryUnique(existing.chat_history || [], serverHistory).sort(byTime)
             return {
               ...prev,
               [activePhone]: {
@@ -286,8 +279,13 @@ export default function UsersPage() {
     let reconnectTimer = null
     let retries = 0
 
-    const fetchUser = () => {
-      setLoadingActive(true)
+    // initial: opening the conversation -- spinner, then the latest page.
+    // Otherwise (takeover, release, SSE reconnect) a refresh: the latest page
+    // is MERGED into what is on screen (older pages the agent loaded stay),
+    // no spinner, and the scroll position is left alone -- the auto-scroll
+    // effect only follows new messages when the agent is already at the bottom.
+    const fetchUser = ({ initial = false } = {}) => {
+      if (initial) setLoadingActive(true)
       Promise.all([
         getUserByPhone(activePhone),
         getChatHistory(activePhone, { limit: 50 }),
@@ -295,24 +293,30 @@ export default function UsersPage() {
         .then(([data, historyPage]) => {
           if (cancelled) return
           const messages = historyPage?.messages || historyPage?.chat_history || data.chat_history || []
-          setHasMoreHistory(Boolean(historyPage?.has_more))
-          if (!historyPage?.has_more) setBeginningReached(true)
-          setUserMap(prev => ({
-            ...prev,
-            [activePhone]: {
-              ...(prev[activePhone] || {}),
-              ...data,
-              chat_history: messages,
-            },
-          }))
+          if (initial) {
+            setHasMoreHistory(Boolean(historyPage?.has_more))
+            if (!historyPage?.has_more) setBeginningReached(true)
+          }
+          setUserMap(prev => {
+            const existing = prev[activePhone] || {}
+            const kept = initial ? [] : existing.chat_history || []
+            return {
+              ...prev,
+              [activePhone]: {
+                ...existing,
+                ...data,
+                chat_history: mergeHistoryUnique(kept, messages).sort(byTime),
+              },
+            }
+          })
           setTakeover(activePhone, data.human_takeover?.active ?? false, data.human_takeover?.taken_by ?? null)
         })
         .catch(() => {})
         .finally(() => {
-          if (!cancelled) setLoadingActive(false)
+          if (!cancelled && initial) setLoadingActive(false)
         })
     }
-    fetchUser()
+    fetchUser({ initial: true })
 
     const baseUrl = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_URL || '')
 
@@ -332,8 +336,8 @@ export default function UsersPage() {
         if (cancelled) return
         try {
           const event = JSON.parse(e.data)
-          // Server sends the timestamp it actually persisted; flooring keeps the
-          // optimistic copy's dedup key identical to the saved row's.
+          // Server sends the timestamp and the _id it actually persisted; the
+          // _id is what the later /chat-history copy is de-duplicated by.
           const ts = Math.floor(event.timestamp ?? Date.now() / 1000)
           const append = (role, content, media) => {
             setUserMap(prev => {
@@ -343,7 +347,7 @@ export default function UsersPage() {
                 [activePhone]: {
                   ...user,
                   chat_history: mergeHistoryUnique(user.chat_history || [], [
-                    { role, content, timestamp: ts, media: media || null },
+                    { role, content, timestamp: ts, media: media || null, ...(event.id ? { _id: event.id } : {}) },
                   ]),
                 },
               }
