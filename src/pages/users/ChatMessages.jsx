@@ -691,9 +691,9 @@ function MediaBlock({ media }) {
   )
 }
 
-function MessageBubble({ msg, outcomeHint, onOpenTrace }) {
+function MessageBubble({ msg, outcomeHint, onOpenTrace, showDetails: turnEnd = true }) {
   const isBot = msg.role === 'assistant'
-  const showDetails = isBot && !!msg.request_id
+  const showDetails = isBot && !!msg.request_id && turnEnd
   const problemDot =
     outcomeHint === 'error'
       ? 'bg-red-500'
@@ -806,7 +806,16 @@ export default function ChatMessages({
       } else if (!day) {
         // legacy without timestamp — no chip
       }
-      out.push({ kind: 'msg', key: msg._id || `msg-${i}-${msg.timestamp || i}`, msg })
+      // A bot turn is stored as one row per WhatsApp message, all sharing the
+      // turn's request_id; its Details link and outcome dot go on the last one.
+      const next = chatHistory[i + 1]
+      const turnEnd = !(
+        msg.role === 'assistant' &&
+        msg.request_id &&
+        next?.role === 'assistant' &&
+        next?.request_id === msg.request_id
+      )
+      out.push({ kind: 'msg', key: msg._id || `msg-${i}-${msg.timestamp || i}`, msg, turnEnd })
     }
     return out
   }, [chatHistory])
@@ -865,7 +874,8 @@ export default function ChatMessages({
               <MessageBubble
                 key={item.key}
                 msg={item.msg}
-                outcomeHint={item.msg.trace_outcome}
+                outcomeHint={item.turnEnd ? item.msg.trace_outcome : undefined}
+                showDetails={item.turnEnd}
                 onOpenTrace={setTraceRequestId}
               />
             )
