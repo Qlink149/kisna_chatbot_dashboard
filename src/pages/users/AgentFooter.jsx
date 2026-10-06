@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { AlertTriangle, Check, FileText, Loader2, Paperclip, Send, X } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { AlertTriangle, Check, FileText, Loader2, MessageSquareText, Paperclip, Send, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { listQuickReplies } from '@/lib/api'
+import { fillName, filterReplies, firstNameFrom, insertAt, replaceSlash, slashQuery } from '@/lib/quickReplies'
+import QuickRepliesPicker from './QuickRepliesPicker'
 
 const MAX_MEDIA_BYTES = 20 * 1024 * 1024 // 20 MB, mirrors KISNA_MEDIA_MAX_BYTES server-side
 const ALLOWED_MEDIA_TYPES = new Set([
@@ -31,6 +35,7 @@ export default function AgentFooter({
   onSendMessage,
   sendingMedia,
   onSendMedia,
+  customerName,
 }) {
   const fileInputRef = useRef(null)
   const textareaRef = useRef(null)
@@ -44,6 +49,54 @@ export default function AgentFooter({
   const [attachedFile, setAttachedFile] = useState(null)
   const [fileError, setFileError] = useState('')
 
+  // Quick replies: the button opens the list with its own search box; "/" at
+  // the start of the composer opens it filtered by what follows. Picking one
+  // only inserts text -- sending is still Enter / the Send button.
+  const { data: quickReplyData, isLoading: quickRepliesLoading, isError: quickRepliesError } = useQuery({
+    queryKey: ['quick-replies'],
+    queryFn: listQuickReplies,
+    enabled: !!isTakenOver,
+    staleTime: 30_000,
+  })
+  const [pickerFromButton, setPickerFromButton] = useState(false)
+  const [pickerSearch, setPickerSearch] = useState('')
+  const [slashDismissed, setSlashDismissed] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(0)
+  const selectionRef = useRef({ start: 0, end: 0 })
+  const pendingCaretRef = useRef(null)
+  const pickerWrapRef = useRef(null)
+
+  const busy = sendingMessage || sendingMedia
+  const composerEnabled = !!isTakenOver && !busy && !isWindowExpired
+  const slash = slashQuery(agentInput)
+  const slashOpen = composerEnabled && !pickerFromButton && slash !== null && !slashDismissed
+  const pickerOpen = composerEnabled && (pickerFromButton || slashOpen)
+  const pickerQuery = pickerFromButton ? pickerSearch : (slash ?? '')
+  const matches = pickerOpen ? filterReplies(quickReplyData?.data, pickerQuery) : []
+  const customerFirstName = firstNameFrom(customerName)
+
+  // After an insert: focus the composer with the caret after the new text.
+  useEffect(() => {
+    const el = textareaRef.current
+    if (!el || pendingCaretRef.current == null) return
+    const caret = pendingCaretRef.current
+    pendingCaretRef.current = null
+    el.focus()
+    el.setSelectionRange(caret, caret)
+  }, [agentInput])
+
+  // A click anywhere outside the list and composer closes the list.
+  useEffect(() => {
+    if (!pickerOpen) return
+    const onDown = e => {
+      if (pickerWrapRef.current?.contains(e.target)) return
+      setPickerFromButton(false)
+      setSlashDismissed(true)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [pickerOpen])
+
   if (!isTakenOver) {
     return (
       <div className="p-3 bg-[rgb(var(--mist-rgb)/0.5)] border-t text-center shrink-0">
@@ -53,8 +106,6 @@ export default function AgentFooter({
       </div>
     )
   }
-
-  const busy = sendingMessage || sendingMedia
 
   const clearAttachment = () => {
     setAttachedFile(null)
@@ -88,6 +139,59 @@ export default function AgentFooter({
       return
     }
     onSendMessage()
+  }
+
+  const closePicker = () => {
+    setPickerFromButton(false)
+    setPickerSearch('')
+    setSlashDismissed(true)
+    setActiveIndex(0)
+  }
+
+  const pickQuickReply = reply => {
+    const text = fillName(reply.body, customerFirstName)
+    const { start, end } = selectionRef.current
+    const next = pickerFromButton ? insertAt(agentInput, text, start, end) : replaceSlash(agentInput, text)
+    closePicker()
+    pendingCaretRef.current = next.caret
+    onAgentInputChange(next.value)
+    if (next.value === agentInput) textareaRef.current?.focus()
+  }
+
+  const togglePickerButton = () => {
+    if (pickerFromButton) {
+      closePicker()
+      textareaRef.current?.focus()
+      return
+    }
+    const el = textareaRef.current
+    selectionRef.current = { start: el?.selectionStart ?? agentInput.length, end: el?.selectionEnd ?? agentInput.length }
+    setPickerSearch('')
+    setActiveIndex(0)
+    setPickerFromButton(true)
+  }
+
+  // Arrow keys / Enter / Tab / Esc while the list is open. True when handled.
+  const handlePickerKey = e => {
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      closePicker()
+      textareaRef.current?.focus()
+      return true
+    }
+    if (!matches.length) return false
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault()
+      const step = e.key === 'ArrowDown' ? 1 : -1
+      setActiveIndex(i => (i + step + matches.length) % matches.length)
+      return true
+    }
+    if ((e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) || e.key === 'Tab') {
+      e.preventDefault()
+      pickQuickReply(matches[Math.min(activeIndex, matches.length - 1)])
+      return true
+    }
+    return false
   }
 
   const canSend = attachedFile ? !busy && !isWindowExpired : !!agentInput.trim() && !busy && !isWindowExpired
@@ -125,7 +229,22 @@ export default function AgentFooter({
           </div>
         </div>
       )}
-      <div className="p-3 flex items-end gap-2">
+      <div ref={pickerWrapRef} className="relative p-3 flex items-end gap-2">
+        {pickerOpen && (
+          <QuickRepliesPicker
+            replies={matches}
+            loading={quickRepliesLoading}
+            error={quickRepliesError}
+            query={pickerQuery}
+            customerFirstName={customerFirstName}
+            activeIndex={Math.min(activeIndex, Math.max(matches.length - 1, 0))}
+            onActiveIndexChange={setActiveIndex}
+            onPick={pickQuickReply}
+            showSearch={pickerFromButton}
+            onSearchChange={v => { setPickerSearch(v); setActiveIndex(0) }}
+            onSearchKeyDown={handlePickerKey}
+          />
+        )}
         <input
           ref={fileInputRef}
           type="file"
@@ -145,16 +264,36 @@ export default function AgentFooter({
         >
           <Paperclip className="h-4 w-4" />
         </Button>
+        <Button
+          type="button"
+          size="icon"
+          variant={pickerFromButton ? 'secondary' : 'outline'}
+          className="h-10 w-10 shrink-0"
+          onClick={togglePickerButton}
+          disabled={busy || isWindowExpired}
+          title="Quick replies (or type / in the message box)"
+          aria-label="Quick replies"
+          aria-expanded={pickerFromButton}
+        >
+          <MessageSquareText className="h-4 w-4" />
+        </Button>
         {/* Enter sends; Shift+Enter inserts a newline. Enter while an IME is
-            composing (Hindi/Gujarati keyboards) only confirms the word. */}
+            composing (Hindi/Gujarati keyboards) only confirms the word. While
+            the "/" quick-reply list shows a match, Enter inserts it instead. */}
         <textarea
           ref={textareaRef}
           rows={1}
           className="flex-1 min-h-10 max-h-40 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm leading-5 shadow-sm outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-          placeholder={attachedFile ? 'Add a caption (optional)...' : 'Type a message as live agent... (Shift+Enter for a new line)'}
+          placeholder={attachedFile ? 'Add a caption (optional)...' : 'Type a message as live agent... (/ for quick replies, Shift+Enter for a new line)'}
           value={agentInput}
-          onChange={e => onAgentInputChange(e.target.value)}
+          onChange={e => {
+            // A fresh "/" (the box was not a "/" command before) reopens the list.
+            if (slashQuery(agentInput) === null || slashQuery(e.target.value) === null) setSlashDismissed(false)
+            setActiveIndex(0)
+            onAgentInputChange(e.target.value)
+          }}
           onKeyDown={e => {
+            if (slashOpen && handlePickerKey(e)) return
             if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
               e.preventDefault()
               handleSend()

@@ -257,3 +257,20 @@ export const importStoresCsv = async (file) => {
   if (res.status === 422) return res.json()
   return handleApiResponse(res)
 }
+
+// ---------------- QUICK REPLIES ----------------
+// Saved messages an agent inserts into the chat composer. Errors come back as
+// a plain-string 422 detail ("Title is required", "...already exists").
+export const listQuickReplies = () => api(`/system/quick-replies?${withClientId().toString()}`)
+
+export const createQuickReply = ({ title, body }) =>
+  api(`/system/quick-replies?${withClientId().toString()}`, 'POST', { title, body })
+
+export const updateQuickReply = (id, changes) =>
+  api(`/system/quick-replies/${encodeURIComponent(id)}?${withClientId().toString()}`, 'PATCH', changes)
+
+export const deleteQuickReply = (id) =>
+  api(`/system/quick-replies/${encodeURIComponent(id)}?${withClientId().toString()}`, 'DELETE')
+
+export const reorderQuickReplies = (ids) =>
+  api(`/system/quick-replies/order?${withClientId().toString()}`, 'PUT', { ids })

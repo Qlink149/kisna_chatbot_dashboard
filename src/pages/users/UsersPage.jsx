@@ -616,6 +616,7 @@ export default function UsersPage() {
               onSendMessage={handleSendMessage}
               sendingMedia={sendingMedia}
               onSendMedia={handleSendMedia}
+              customerName={activeUserData?.username}
             />
           )}
         </div>

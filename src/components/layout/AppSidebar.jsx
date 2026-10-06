@@ -20,6 +20,7 @@ import {
   Phone,
   MapPin,
   Store,
+  MessageSquareText,
 } from 'lucide-react'
 
 const navGroups = [
@@ -32,6 +33,7 @@ const navGroups = [
       { to: '/callbacks', label: 'Callbacks', icon: Phone },
       { to: '/store-visits', label: 'Store Visits', icon: MapPin },
       { to: '/stores', label: 'Stores', icon: Store },
+      { to: '/quick-replies', label: 'Quick replies', icon: MessageSquareText },
     ],
   },
 ]
