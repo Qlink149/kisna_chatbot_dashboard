@@ -806,6 +806,12 @@ export default function ChatMessages({
       } else if (!day) {
         // legacy without timestamp — no chip
       }
+      // A note for agents only (role "system", never sent to WhatsApp), e.g.
+      // "No agent reply in 5 min, callback form sent, chat returned to bot."
+      if (msg?.role === 'system') {
+        out.push({ kind: 'note', key: msg._id || `note-${i}-${msg.timestamp || i}`, text: msg.content })
+        continue
+      }
       // A bot turn is stored as one row per WhatsApp message, all sharing the
       // turn's request_id; its Details link and outcome dot go on the last one.
       const next = chatHistory[i + 1]
@@ -864,7 +870,13 @@ export default function ChatMessages({
             </div>
           )}
           {items.map((item) =>
-            item.kind === 'date' ? (
+            item.kind === 'note' ? (
+              <div key={item.key} className="flex justify-center" data-testid="system-note">
+                <span className="max-w-[90%] rounded-md border border-dashed border-amber-300 bg-amber-50 px-3 py-1 text-center text-[11px] text-amber-800">
+                  {item.text}
+                </span>
+              </div>
+            ) : item.kind === 'date' ? (
               <div key={item.key} className="flex justify-center sticky top-1 z-10">
                 <span className="rounded-full bg-card/90 border px-3 py-1 text-[10px] font-medium text-muted-foreground shadow-sm">
                   {item.label}
