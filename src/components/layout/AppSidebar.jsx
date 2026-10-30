@@ -21,6 +21,7 @@ import {
   MapPin,
   Store,
   MessageSquareText,
+  Clock,
 } from 'lucide-react'
 
 const navGroups = [
@@ -34,6 +35,7 @@ const navGroups = [
       { to: '/store-visits', label: 'Store Visits', icon: MapPin },
       { to: '/stores', label: 'Stores', icon: Store },
       { to: '/quick-replies', label: 'Quick replies', icon: MessageSquareText },
+      { to: '/support-hours', label: 'Support hours', icon: Clock },
     ],
   },
 ]

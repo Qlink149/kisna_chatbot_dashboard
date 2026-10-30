@@ -30,7 +30,9 @@ const handleApiResponse = async (res) => {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }))
-    throw new Error(err.detail || 'Request failed')
+    // Validation errors (422) arrive as a list of plain-English problems.
+    const detail = Array.isArray(err.detail) ? err.detail.join('\n') : err.detail
+    throw new Error(detail || 'Request failed')
   }
   if (res.status === 204) return null
   return res.json()
@@ -274,3 +276,11 @@ export const deleteQuickReply = (id) =>
 
 export const reorderQuickReplies = (ids) =>
   api(`/system/quick-replies/order?${withClientId().toString()}`, 'PUT', { ids })
+
+// ---------------- SUPPORT HOURS ----------------
+// Hours, holidays, closures, no-callback dates and the away message. The bot
+// reads whatever is saved here within a few seconds.
+export const getSupportSchedule = () => api(`/system/support-schedule?${withClientId().toString()}`)
+
+export const saveSupportSchedule = (body) =>
+  api(`/system/support-schedule?${withClientId().toString()}`, 'PUT', body)
