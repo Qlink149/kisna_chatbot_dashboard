@@ -84,7 +84,7 @@ export function validate(form) {
     const label = `No-callback dates ${i + 1}`
     if (!b.start_date || !b.end_date) errors.push(`${label}: set both dates.`)
     else if (b.end_date < b.start_date) errors.push(`${label}: the last date can’t be before the first.`)
-    if (b.name.length > MAX_NAME) errors.push(`${label}: note is too long (max ${MAX_NAME}).`)
+    if (b.name.length > MAX_NAME) errors.push(`${label}: the reason is too long (max ${MAX_NAME}).`)
   })
   return errors
 }
@@ -96,6 +96,22 @@ export const isDirty = (form, saved) => JSON.stringify(toPayload(form)) !== JSON
 export function isPast(value, nowIso) {
   if (!value) return false
   return value.slice(0, nowIso.length) < nowIso.slice(0, value.length)
+}
+
+// What a customer sees in the callback form's date picker for a no-callback range.
+// Mirrors kisna_chatbot/utils/support_slots.py (screen_data_for_date).
+const LONG_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+const dayMonth = iso => {
+  const [, m, d] = iso.split('-').map(Number)
+  return `${d} ${LONG_MONTHS[m - 1]}`
+}
+export function blackoutMessage(b) {
+  if (!b?.start_date || !b?.end_date || b.end_date < b.start_date) return ''
+  const reason = (b.name || '').trim() ? ` (${b.name.trim()})` : ''
+  const when = b.start_date === b.end_date
+    ? `on ${dayMonth(b.start_date)}`
+    : `from ${dayMonth(b.start_date)} to ${dayMonth(b.end_date)}`
+  return `Callbacks are not available ${when}${reason}. Please choose another date.`
 }
 
 // "2026-11-07T12:00" -> "7 Nov 2026, 12:00 PM"; "2026-11-07" -> "7 Nov 2026"

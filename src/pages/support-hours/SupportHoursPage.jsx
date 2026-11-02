@@ -6,6 +6,7 @@ import { getSupportSchedule, saveSupportSchedule } from '@/lib/api'
 import {
   MAX_AWAY_MESSAGE,
   MAX_NAME,
+  blackoutMessage,
   emptyBlackout,
   emptyClosure,
   emptyHoliday,
@@ -277,7 +278,7 @@ export default function SupportHoursPage() {
       <Section
         icon={PhoneOff}
         title="No callback dates"
-        hint="On these dates customers can’t book a callback slot. The date picker tells them, and bookings move to the next available day."
+        hint="On these dates customers can’t book a callback slot. The date picker shows them the dates and your reason, and bookings move to the next available day."
         action={<AddButton onClick={() => addRow('callback_blackouts', emptyBlackout)}>Add dates</AddButton>}
       >
         {form.callback_blackouts.length === 0 ? (
@@ -298,15 +299,14 @@ export default function SupportHoursPage() {
                   <input type="date" className={inputCls} value={b.end_date}
                     onChange={e => setRow('callback_blackouts', i, { end_date: e.target.value })} />
                 </Field>
-                <Field label="Note (optional)" className="min-w-40 flex-1">
+                <Field label="Reason (shown to customers)" className="min-w-40 flex-1">
                   <input className={inputCls} value={b.name} maxLength={MAX_NAME}
-                    onChange={e => setRow('callback_blackouts', i, { name: e.target.value })} placeholder="e.g. Office closed" />
+                    onChange={e => setRow('callback_blackouts', i, { name: e.target.value })} placeholder="e.g. Diwali vacation" />
                 </Field>
                 <RemoveButton label={`Remove no-callback dates ${i + 1}`} onClick={() => removeRow('callback_blackouts', i)} />
                 {b.start_date && b.end_date && b.end_date >= b.start_date && (
                   <p className="basis-full text-[11px] text-muted-foreground">
-                    No callbacks {prettyWhen(b.start_date)}
-                    {b.end_date !== b.start_date ? ` to ${prettyWhen(b.end_date)}` : ''}
+                    Customers see: “{blackoutMessage(b)}”
                   </p>
                 )}
               </div>

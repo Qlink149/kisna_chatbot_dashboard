@@ -6,6 +6,7 @@ import {
   emptyClosure,
   emptyHoliday,
   isDirty,
+  blackoutMessage,
   isPast,
   prettyWhen,
   toForm,
@@ -127,4 +128,21 @@ test('prettyWhen', () => {
   assert.equal(prettyWhen('2026-10-30T00:05'), '30 Oct 2026, 12:05 AM')
   assert.equal(prettyWhen('2026-11-15'), '15 Nov 2026')
   assert.equal(prettyWhen(''), '')
+})
+
+test('blackoutMessage matches what the bot sends in the date picker', () => {
+  assert.equal(
+    blackoutMessage({ name: 'Diwali vacation', start_date: '2026-11-07', end_date: '2026-11-15' }),
+    'Callbacks are not available from 7 November to 15 November (Diwali vacation). Please choose another date.',
+  )
+  assert.equal(
+    blackoutMessage({ name: '  ', start_date: '2026-12-03', end_date: '2026-12-04' }),
+    'Callbacks are not available from 3 December to 4 December. Please choose another date.',
+  )
+  assert.equal(
+    blackoutMessage({ name: 'Audit', start_date: '2026-12-03', end_date: '2026-12-03' }),
+    'Callbacks are not available on 3 December (Audit). Please choose another date.',
+  )
+  assert.equal(blackoutMessage({ name: 'x', start_date: '', end_date: '2026-12-03' }), '')
+  assert.equal(blackoutMessage({ name: 'x', start_date: '2026-12-05', end_date: '2026-12-03' }), '')
 })
