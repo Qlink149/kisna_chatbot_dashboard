@@ -13,6 +13,7 @@ import StoreVisitsPage from '@/pages/store-visits/StoreVisitsPage'
 import StoresPage from '@/pages/stores/StoresPage'
 import QuickRepliesPage from '@/pages/quick-replies/QuickRepliesPage'
 import SupportHoursPage from '@/pages/support-hours/SupportHoursPage'
+import DropoffMessagePage from '@/pages/dropoff-message/DropoffMessagePage'
 import LoginPage from '@/pages/auth/LoginPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
@@ -40,6 +41,7 @@ export default function App() {
               <Route path="/stores" element={<StoresPage />} />
               <Route path="/quick-replies" element={<QuickRepliesPage />} />
               <Route path="/support-hours" element={<SupportHoursPage />} />
+              <Route path="/dropoff-message" element={<DropoffMessagePage />} />
 
               {/* Fallback 404 Route */}
               <Route path="*" element={<NotFoundPage />} />

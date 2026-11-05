@@ -284,3 +284,9 @@ export const getSupportSchedule = () => api(`/system/support-schedule?${withClie
 
 export const saveSupportSchedule = (body) =>
   api(`/system/support-schedule?${withClientId().toString()}`, 'PUT', body)
+
+// ---------------- DROP-OFF MESSAGE ----------------
+export const getDropoffMessage = () => api(`/system/dropoff-message?${withClientId().toString()}`)
+
+export const saveDropoffMessage = (body) =>
+  api(`/system/dropoff-message?${withClientId().toString()}`, 'PUT', body)
