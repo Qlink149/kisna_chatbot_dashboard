@@ -12,7 +12,7 @@ import { safeFormatDate } from '@/pages/users/utils'
 const QUERY_KEY = ['dropoff-message']
 const DESCRIPTION = 'The message customers receive when they stop replying.'
 
-function WordingBox({ label, hint, value, maxChars, onChange }) {
+function WordingBox({ label, hint, value, maxChars, onChange, tall = false }) {
   const length = cleanText(value).length
   return (
     <div>
@@ -26,7 +26,7 @@ function WordingBox({ label, hint, value, maxChars, onChange }) {
         </span>
       </div>
       <textarea
-        className="min-h-24 w-full resize-y rounded-md border border-border bg-white px-3 py-2 text-sm leading-5 outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        className={`${tall ? 'min-h-64' : 'min-h-24'} w-full resize-y rounded-md border border-border bg-white px-3 py-2 text-sm leading-5 outline-none focus-visible:ring-1 focus-visible:ring-ring`}
         value={value}
         onChange={e => onChange(e.target.value)}
         aria-label={label}
@@ -125,21 +125,34 @@ export default function DropoffMessagePage() {
 
         <div>
           <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold">
-            <Lock className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" /> Offers (updated automatically)
+            <Lock className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" /> Making charges offers (updated automatically)
           </div>
           <div
             className="whitespace-pre-wrap rounded-md border border-dashed border-border bg-muted/40 px-3 py-2 text-sm leading-5 text-muted-foreground"
-            data-testid="dropoff-offers"
+            data-testid="dropoff-figures"
           >
-            {data.offers}
+            {data.figures || 'No making charges offer is running right now, so customers won’t see these lines.'}
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            You don’t need to change this part. The % OFF figures come from your live offers, and ended offers drop out by themselves.
-            To add or remove an offer here, please contact the Clara team.
+            You don’t need to change these lines. The % OFF comes from your live offers, so it is always up to date.
           </p>
         </div>
 
-        <WordingBox label="Bottom text" hint="you can edit this" value={form.footer} maxChars={data.max_chars} onChange={v => setField('footer', v)} />
+        <div>
+          <WordingBox
+            label="Bottom text"
+            hint="you can edit this"
+            tall
+            value={form.footer}
+            maxChars={data.max_chars}
+            onChange={v => setField('footer', v)}
+          />
+          <div className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            {data.footer_is_custom
+              ? 'This text is sent exactly as you saved it. When an offer in it ends, such as a lucky draw, please remove it here.'
+              : 'Ended offers drop out of this text by themselves. Once you edit and save it, they won’t: when an offer ends, please remove it here.'}
+          </div>
+        </div>
       </section>
 
       {/* Save bar: sticks to the bottom of the page scroller, so it follows the content width */}
