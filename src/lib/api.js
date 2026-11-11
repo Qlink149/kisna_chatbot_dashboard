@@ -290,3 +290,51 @@ export const getDropoffMessage = () => api(`/system/dropoff-message?${withClient
 
 export const saveDropoffMessage = (body) =>
   api(`/system/dropoff-message?${withClientId().toString()}`, 'PUT', body)
+
+// ---------------- WALLET ----------------
+// Staff-only: the server answers 404 to anyone not allowed (see
+// user.features.wallet from /system/auth/me). Money is a rupee string,
+// times are epoch seconds.
+const walletQuery = (params = {}) => {
+  const q = new URLSearchParams()
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== '') q.set(key, String(value))
+  }
+  const s = q.toString()
+  return s ? `?${s}` : ''
+}
+
+export const getWalletSummary = () => api('/system/wallet/summary')
+
+export const getWalletDaily = (days = 30) => api(`/system/wallet/daily${walletQuery({ days })}`)
+
+export const listWalletCustomers = ({ q = '', page = 1, limit = 20 } = {}) =>
+  api(`/system/wallet/customers${walletQuery({ q, page, limit })}`)
+
+export const exportWalletCustomersCsv = (q = '') =>
+  downloadCsv(`/system/wallet/customers.csv${walletQuery({ q })}`, 'wallet_customers.csv')
+
+export const listWalletCharges = ({ status = '', phone = '', page = 1, limit = 20 } = {}) =>
+  api(`/system/wallet/charges${walletQuery({ status, phone, page, limit })}`)
+
+// Read-only estimate of what a backfill would charge; nothing is charged.
+export const getBackfillEstimate = () => api('/system/wallet/backfill-estimate')
+
+export const startBackfillEstimate = (since) =>
+  api('/system/wallet/backfill-estimate', 'POST', { since })
+
+// Returns the summary's `wallet` object, read fresh from the wallet service.
+export const refreshWalletStatus = () => api('/system/wallet/refresh-status', 'POST')
+
+// Returns {brought_forward, tried}.
+export const retryWalletCharges = () => api('/system/wallet/retry', 'POST')
+
+export const quoteTopup = (amountRupees) =>
+  api('/system/wallet/topup/quote', 'POST', { amount_rupees: String(amountRupees) })
+
+// {available: true, razorpay_order_id, razorpay_key_id, amount_paise, quote}
+// or {available: false, reason}.
+export const createTopup = (amountRupees) =>
+  api('/system/wallet/topup', 'POST', { amount_rupees: String(amountRupees) })
+
+export const listWalletInvoices = () => api('/system/wallet/invoices')

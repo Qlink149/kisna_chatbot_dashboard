@@ -14,6 +14,7 @@ import StoresPage from '@/pages/stores/StoresPage'
 import QuickRepliesPage from '@/pages/quick-replies/QuickRepliesPage'
 import SupportHoursPage from '@/pages/support-hours/SupportHoursPage'
 import DropoffMessagePage from '@/pages/dropoff-message/DropoffMessagePage'
+import WalletRoute from '@/pages/wallet/WalletRoute'
 import LoginPage from '@/pages/auth/LoginPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
@@ -42,6 +43,7 @@ export default function App() {
               <Route path="/quick-replies" element={<QuickRepliesPage />} />
               <Route path="/support-hours" element={<SupportHoursPage />} />
               <Route path="/dropoff-message" element={<DropoffMessagePage />} />
+              <Route path="/wallet" element={<WalletRoute />} />
 
               {/* Fallback 404 Route */}
               <Route path="*" element={<NotFoundPage />} />

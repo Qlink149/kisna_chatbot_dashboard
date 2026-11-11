@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { logout } from '@/lib/api'
+import { useAuth } from '@/context/AuthContext'
 import {
   Sidebar,
   SidebarContent,
@@ -23,6 +24,7 @@ import {
   MessageSquareText,
   Clock,
   Megaphone,
+  Wallet,
 } from 'lucide-react'
 
 const navGroups = [
@@ -38,6 +40,8 @@ const navGroups = [
       { to: '/quick-replies', label: 'Quick replies', icon: MessageSquareText },
       { to: '/support-hours', label: 'Support hours', icon: Clock },
       { to: '/dropoff-message', label: 'Drop-off message', icon: Megaphone },
+      // Shown only when /system/auth/me has features.wallet === true.
+      { to: '/wallet', label: 'Wallet', icon: Wallet, feature: 'wallet' },
     ],
   },
 ]
@@ -86,7 +90,9 @@ function NavItem({ to, label, icon: Icon, exact }) {
 
 export function AppSidebar() {
   const { toggleSidebar, state } = useSidebar()
+  const { user } = useAuth()
   const collapsed = state === 'collapsed'
+  const visible = item => !item.feature || user?.features?.[item.feature] === true
 
   async function handleLogout() {
     try { await logout() } catch {}
@@ -138,7 +144,7 @@ export function AppSidebar() {
               )}
               {collapsed && <div className="mb-2 h-px mx-1" style={{ background: 'rgba(12,8,40,0.08)' }} />}
               <div className="space-y-0.5">
-                {items.map((item) => (
+                {items.filter(visible).map((item) => (
                   <NavItem key={item.to} {...item} />
                 ))}
               </div>
