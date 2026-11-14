@@ -1,6 +1,6 @@
 import { RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { formatIST, formatRupees, modeLabel, relativeTime, runwayText, walletStatusLabel } from '@/lib/wallet'
+import { bundlesLeftText, formatIST, formatRupees, modeLabel, relativeTime, runwayText, walletStatusLabel } from '@/lib/wallet'
 import { Pill } from './parts'
 
 const MODE_TONE = { off: 'grey', shadow: 'blue', live: 'green' }
@@ -17,6 +17,7 @@ export function StatusStrip({ summary, onRefresh, refreshing }) {
   const wallet = summary.wallet || {}
   const livePhones = summary.live_phones || []
   const liveTest = summary.mode === 'shadow' && livePhones.length > 0
+  const bundlesLeft = bundlesLeftText(wallet.balance_rupees, summary.bundle_price_rupees, summary.bundle_size)
 
   return (
     <div className="mb-4 space-y-2">
@@ -34,6 +35,7 @@ export function StatusStrip({ summary, onRefresh, refreshing }) {
           <span className="text-muted-foreground">Wallet</span>
           <Pill tone={STATUS_TONE[wallet.status]}>{walletStatusLabel(wallet.status)}</Pill>
           <span className="text-sm font-semibold tabular-nums">{formatRupees(wallet.balance_rupees)}</span>
+          {bundlesLeft && <span className="text-muted-foreground">{bundlesLeft}</span>}
         </div>
         <span className="text-muted-foreground">
           Last updated {wallet.updated_at ? `${relativeTime(wallet.updated_at)} · ${formatIST(wallet.updated_at)}` : 'never'}

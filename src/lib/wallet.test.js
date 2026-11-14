@@ -2,6 +2,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
+  bundlesLeftText,
   dailyBars,
   debounce,
   durationText,
@@ -105,4 +106,15 @@ test('debounce only fires the last call', async () => {
   fn(4); fn.cancel()
   await new Promise(r => setTimeout(r, 50))
   assert.deepEqual(calls, [3])
+})
+
+test('bundlesLeftText turns the balance into bundles and messages', () => {
+  assert.equal(bundlesLeftText('46.50', '3.50', 20), '≈ 13 bundles left (260 messages)')
+  assert.equal(bundlesLeftText('3.50', '3.50', 20), '≈ 1 bundle left (20 messages)')
+  assert.equal(bundlesLeftText('2.00', '3.50', 20), 'less than 1 bundle left')
+  assert.equal(bundlesLeftText('-3.50', '3.50', 20), 'no bundles left')
+  assert.equal(bundlesLeftText('0', '3.50', 20), 'no bundles left')
+  assert.equal(bundlesLeftText(null, '3.50', 20), null)
+  assert.equal(bundlesLeftText('100', '0', 20), null)
+  assert.equal(bundlesLeftText('100000', '3.50', 20), '≈ 28,571 bundles left (5,71,420 messages)')
 })

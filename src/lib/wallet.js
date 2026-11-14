@@ -157,3 +157,17 @@ export function debounce(fn, ms) {
   }
   return wrapped
 }
+
+// "≈ 13 bundles (260 messages)" from the balance: how much chat the client
+// has left before the wallet pauses. Null when the balance isn't known.
+export function bundlesLeftText(balanceRupees, bundlePriceRupees, bundleSize) {
+  const balance = Number(balanceRupees)
+  const price = Number(bundlePriceRupees)
+  const size = Number(bundleSize)
+  if (balanceRupees == null || !Number.isFinite(balance) || !(price > 0) || !(size > 0)) return null
+  if (balance <= 0) return 'no bundles left'
+  const bundles = Math.floor(balance / price)
+  if (bundles === 0) return 'less than 1 bundle left'
+  const messages = bundles * size
+  return `≈ ${bundles.toLocaleString('en-IN')} bundle${bundles === 1 ? '' : 's'} left (${messages.toLocaleString('en-IN')} messages)`
+}
