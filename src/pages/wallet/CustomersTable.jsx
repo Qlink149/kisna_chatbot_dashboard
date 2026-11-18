@@ -10,9 +10,10 @@ import { ErrorBox, Pager, Pill, Section, SkeletonRows, Th } from './parts'
 import { useDebouncedValue } from './useDebouncedValue'
 
 const LIMIT = 20
-const COLS = 8
 
-export function CustomersTable() {
+// client: no "Live" column (that marks our internal test numbers).
+export function CustomersTable({ client = false }) {
+  const COLS = client ? 7 : 8
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [exporting, setExporting] = useState(false)
@@ -69,7 +70,7 @@ export function CustomersTable() {
               <thead>
                 <tr className="border-b bg-[rgb(var(--mist-rgb)/0.6)]">
                   <Th>Phone</Th><Th>Name</Th><Th right>Messages</Th><Th right>Bundles</Th>
-                  <Th right>Amount</Th><Th right>Left in bundle</Th><Th>Last message</Th><Th>Live</Th>
+                  <Th right>Amount</Th><Th right>Left in bundle</Th><Th>Last message</Th>{!client && <Th>Live</Th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
@@ -94,7 +95,7 @@ export function CustomersTable() {
                         <div>{formatIST(r.last_message_at)}</div>
                         <div>{relativeTime(r.last_message_at)}</div>
                       </td>
-                      <td className="px-4 py-3">{r.live ? <Pill tone="green">Live</Pill> : <span className="text-xs text-muted-foreground">—</span>}</td>
+                      {!client && <td className="px-4 py-3">{r.live ? <Pill tone="green">Live</Pill> : <span className="text-xs text-muted-foreground">—</span>}</td>}
                     </tr>
                   ))
                 )}

@@ -16,7 +16,8 @@ function Legend({ color, label }) {
   )
 }
 
-export function DailyChart() {
+// client: one colour per bar and no charged/shadow split (internal ledger states).
+export function DailyChart({ client = false }) {
   const { data, isLoading, isError, error } = useQuery({ queryKey: ['wallet', 'daily', 30], queryFn: () => getWalletDaily(30) })
   const bars = dailyBars(data?.days)
   const total = bars.reduce((s, b) => s + b.amount, 0)
@@ -24,7 +25,7 @@ export function DailyChart() {
 
   return (
     <Section
-      title="Last 30 days"
+      title={client ? 'Usage, last 30 days' : 'Last 30 days'}
       icon={BarChart3}
       action={!isLoading && !isError && <span className="text-xs text-muted-foreground">{formatRupees(total)} in total</span>}
     >
@@ -39,16 +40,22 @@ export function DailyChart() {
           <ul className="flex h-40 items-end gap-[2px] sm:gap-1" aria-label="Amount per day">
             {bars.map(b => {
               const label = `${formatDay(b.date)}: ${formatCount(b.bundles)} bundles, ${formatRupees(b.amount)}`
-                + (b.charged || b.shadow ? ` (${b.charged} charged, ${b.shadow} shadow)` : '')
+                + (!client && (b.charged || b.shadow) ? ` (${b.charged} charged, ${b.shadow} shadow)` : '')
               return (
                 <li key={b.date} title={label} aria-label={label} className="group flex h-full min-w-0 flex-1 flex-col justify-end">
                   <div
                     className="flex w-full flex-col-reverse overflow-hidden rounded-t-sm group-hover:opacity-80"
                     style={{ height: `${b.chargedPct + b.shadowPct + b.otherPct}%`, minHeight: b.amount > 0 ? 2 : 0 }}
                   >
-                    <div style={{ flexGrow: b.chargedPct, background: COLORS.charged }} />
-                    <div style={{ flexGrow: b.shadowPct, background: COLORS.shadow }} />
-                    <div style={{ flexGrow: b.otherPct, background: COLORS.other }} />
+                    {client ? (
+                      <div style={{ flexGrow: 1, background: COLORS.charged }} />
+                    ) : (
+                      <>
+                        <div style={{ flexGrow: b.chargedPct, background: COLORS.charged }} />
+                        <div style={{ flexGrow: b.shadowPct, background: COLORS.shadow }} />
+                        <div style={{ flexGrow: b.otherPct, background: COLORS.other }} />
+                      </>
+                    )}
                   </div>
                 </li>
               )
@@ -59,10 +66,10 @@ export function DailyChart() {
             <span>{formatDay(bars[bars.length - 1].date)}</span>
           </div>
           <div className="mt-2 flex flex-wrap gap-3 text-[11px] text-muted-foreground">
-            {has('chargedPct') && <Legend color={COLORS.charged} label="Charged" />}
-            {has('shadowPct') && <Legend color={COLORS.shadow} label="Shadow (not charged)" />}
-            {has('otherPct') && <Legend color={COLORS.other} label="Pending / other" />}
-            <span>Hover a bar for the date, bundles and amount. Backfill is not included.</span>
+            {!client && has('chargedPct') && <Legend color={COLORS.charged} label="Charged" />}
+            {!client && has('shadowPct') && <Legend color={COLORS.shadow} label="Shadow (not charged)" />}
+            {!client && has('otherPct') && <Legend color={COLORS.other} label="Pending / other" />}
+            <span>{client ? 'Hover a bar for the date, bundles and amount.' : 'Hover a bar for the date, bundles and amount. Backfill is not included.'}</span>
           </div>
         </>
       )}

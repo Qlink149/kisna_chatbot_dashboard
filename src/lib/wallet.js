@@ -171,3 +171,12 @@ export function bundlesLeftText(balanceRupees, bundlePriceRupees, bundleSize) {
   const messages = bundles * size
   return `≈ ${bundles.toLocaleString('en-IN')} bundle${bundles === 1 ? '' : 's'} left (${messages.toLocaleString('en-IN')} messages)`
 }
+
+// "2026-11-18T07:25:33.851000" (UTC, from the wallet service) -> epoch seconds,
+// so it can go through formatIST. Null when missing or unreadable.
+export function isoToEpoch(iso) {
+  if (!iso) return null
+  const text = String(iso)
+  const ms = Date.parse(/[zZ]|[+-]\d\d:?\d\d$/.test(text) ? text : `${text}Z`)
+  return Number.isFinite(ms) ? Math.floor(ms / 1000) : null
+}

@@ -25,15 +25,17 @@ const periodLines = (p, shadow) => [
   shadow ? 'What would be charged (shadow)' : null,
 ]
 
-export function StatCards({ summary }) {
+// client: Today, This month and Avg daily spend only (the Unconfirmed card is
+// internal ledger plumbing).
+export function StatCards({ summary, client = false }) {
   const shadow = summary.mode === 'shadow'
   const unconfirmed = unconfirmedCount(summary.by_status)
   const oldest = summary.oldest_pending_at
   return (
-    <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div className={`mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 ${client ? 'xl:grid-cols-3' : 'xl:grid-cols-4'}`}>
       <Card icon={CalendarDays} label="Today" value={formatRupees(summary.today?.amount_rupees)} lines={periodLines(summary.today, shadow)} />
       <Card icon={CalendarRange} label="This month" value={formatRupees(summary.month?.amount_rupees)} lines={periodLines(summary.month, shadow)} />
-      <Card
+      {!client && <Card
         icon={Clock}
         label="Unconfirmed"
         value={formatRupees(summary.owed_unconfirmed_rupees)}
@@ -41,12 +43,12 @@ export function StatCards({ summary }) {
           `${formatCount(unconfirmed)} charge${unconfirmed === 1 ? '' : 's'} pending or stuck`,
           oldest ? `Oldest one queued ${relativeTime(oldest)}` : 'Nothing waiting',
         ]}
-      />
+      />}
       <Card
         icon={TrendingUp}
         label="Avg daily spend"
         value={formatRupees(summary.avg_daily_spend_rupees)}
-        lines={['Last 7 days, backfill not included', runwayText(summary.runway_days)]}
+        lines={[client ? 'Last 7 days' : 'Last 7 days, backfill not included', runwayText(summary.runway_days)]}
       />
     </div>
   )

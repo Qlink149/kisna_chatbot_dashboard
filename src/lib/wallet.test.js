@@ -3,6 +3,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   bundlesLeftText,
+  isoToEpoch,
   dailyBars,
   debounce,
   durationText,
@@ -117,4 +118,11 @@ test('bundlesLeftText turns the balance into bundles and messages', () => {
   assert.equal(bundlesLeftText(null, '3.50', 20), null)
   assert.equal(bundlesLeftText('100', '0', 20), null)
   assert.equal(bundlesLeftText('100000', '3.50', 20), '≈ 28,571 bundles left (5,71,420 messages)')
+})
+
+test('isoToEpoch reads the wallet service timestamps as UTC', () => {
+  assert.equal(isoToEpoch('2026-11-18T07:25:33.851000'), 1794986733)
+  assert.equal(isoToEpoch('2026-11-18T07:25:33Z'), 1794986733)
+  assert.equal(isoToEpoch(null), null)
+  assert.equal(isoToEpoch('not a date'), null)
 })
