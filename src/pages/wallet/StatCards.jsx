@@ -28,11 +28,24 @@ const periodLines = (p, shadow) => [
 // client: Today, This month and Avg daily spend only (the Unconfirmed card is
 // internal ledger plumbing).
 export function StatCards({ summary, client = false }) {
-  const shadow = summary.mode === 'shadow'
+  // The client never sees shadow wording (the server doesn't even send them the mode).
+  const shadow = !client && summary.mode === 'shadow'
   const unconfirmed = unconfirmedCount(summary.by_status)
   const oldest = summary.oldest_pending_at
+  // The client's usage from 1 Sep up to go-live, billed once at go-live: shown as
+  // one card so the drop in their balance that day is explained.
+  const opening = client && summary.backfill?.applied ? summary.backfill : null
+  const cols = client ? (opening ? 'xl:grid-cols-4' : 'xl:grid-cols-3') : 'xl:grid-cols-4'
   return (
-    <div className={`mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 ${client ? 'xl:grid-cols-3' : 'xl:grid-cols-4'}`}>
+    <div className={`mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 ${cols}`}>
+      {opening && (
+        <Card
+          icon={CalendarRange}
+          label="Usage before billing started"
+          value={formatRupees(opening.amount_rupees)}
+          lines={[`${formatCount(opening.bundles)} bundles, 1 Sep up to go-live`, 'Charged once when billing started']}
+        />
+      )}
       <Card icon={CalendarDays} label="Today" value={formatRupees(summary.today?.amount_rupees)} lines={periodLines(summary.today, shadow)} />
       <Card icon={CalendarRange} label="This month" value={formatRupees(summary.month?.amount_rupees)} lines={periodLines(summary.month, shadow)} />
       {!client && <Card
