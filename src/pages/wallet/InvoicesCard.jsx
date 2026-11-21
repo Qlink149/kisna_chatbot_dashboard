@@ -5,9 +5,11 @@ import { formatIST, formatRupees, isoToEpoch } from '@/lib/wallet'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ErrorBox, Section, Th } from './parts'
 
-// Invoice total = wallet credit + 18% GST. What the client actually paid also
-// covers the payment gateway's fee and its GST (added at checkout), so both are
-// shown: "invoice Rs 118 but I paid Rs 121.07" answers itself.
+// Each invoice is for the full amount paid: wallet credit + payment gateway
+// charges + 18% GST (e.g. Rs 100 + Rs 2.60 + Rs 18.47 = Rs 121.07). Older
+// invoices covered only the credit + GST; for those, Paid also shows the gateway
+// charges added at checkout. The backend fills wallet_credit_rupees /
+// paid_rupees / gateway_charges_rupees for both kinds.
 // client: no internal storage path.
 export function InvoicesCard({ client = false }) {
   const { data, isLoading, isError, error } = useQuery({ queryKey: ['wallet', 'invoices'], queryFn: listWalletInvoices })
@@ -24,7 +26,7 @@ export function InvoicesCard({ client = false }) {
         <table className="dashboard-table w-full text-sm">
           <thead>
             <tr className="border-b bg-[rgb(var(--mist-rgb)/0.6)]">
-              <Th>Invoice no.</Th><Th right>Wallet credit</Th><Th right>GST 18%</Th><Th right>Invoice total</Th>
+              <Th>Invoice no.</Th><Th right>Wallet credit</Th><Th right>GST</Th><Th right>Invoice total</Th>
               <Th right>Paid</Th><Th>Emailed</Th>{!client && <Th>PDF file</Th>}
             </tr>
           </thead>
@@ -35,7 +37,7 @@ export function InvoicesCard({ client = false }) {
               return (
                 <tr key={r.invoice_no}>
                   <td className="px-4 py-3 font-mono text-xs whitespace-nowrap">{r.invoice_no}</td>
-                  <td className="px-4 py-3 text-right tabular-nums whitespace-nowrap">{formatRupees(r.taxable_rupees)}</td>
+                  <td className="px-4 py-3 text-right tabular-nums whitespace-nowrap">{formatRupees(r.wallet_credit_rupees ?? r.taxable_rupees)}</td>
                   <td className="px-4 py-3 text-right tabular-nums whitespace-nowrap">{formatRupees(r.gst_rupees)}</td>
                   <td className="px-4 py-3 text-right tabular-nums whitespace-nowrap font-medium">{formatRupees(r.total_rupees)}</td>
                   <td className="px-4 py-3 text-right tabular-nums whitespace-nowrap">
@@ -53,7 +55,7 @@ export function InvoicesCard({ client = false }) {
         </table>
       </div>
       <p className="mt-3 text-[11px] text-muted-foreground">
-        The invoice is for the wallet credit plus 18% GST. The amount paid also covers the payment gateway&rsquo;s fee and the GST on it, added at checkout.
+        Each invoice is for the amount paid: the wallet credit, the payment gateway&rsquo;s charges and 18% GST on both. The PDF shows the full breakdown.
       </p>
     </>
   )
