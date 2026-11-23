@@ -41,20 +41,31 @@ export default function WalletPage() {
 
   const refresh = useMutation({
     mutationFn: refreshWalletStatus,
-    onSuccess: wallet => {
+    onSuccess: ({ refreshed, ...wallet }) => {
       queryClient.setQueryData(SUMMARY_KEY, old => (old ? { ...old, wallet } : old))
       queryClient.invalidateQueries({ queryKey: SUMMARY_KEY })
-      toast.success('Balance refreshed')
+      // refreshed=false: the wallet didn't answer, so this is the last known balance.
+      if (refreshed === false) toast.error('Couldn’t reach the wallet service. Showing the last known balance.')
+      else toast.success('Balance refreshed')
     },
     onError: e => toast.error(e.message || 'Could not reach the wallet service'),
   })
 
-  // After a payment the wallet credits a little later: look again at ~5s and ~30s.
+  // After a payment the wallet credits a little later: ask the wallet itself
+  // again at ~5s and ~30s. Re-reading the summary alone isn't enough: it shows the
+  // balance last seen on a charge, so with no customers messaging the page kept
+  // the old balance (or "run out") after paying, and the Pay button invited a
+  // second payment.
   const timers = useRef([])
   useEffect(() => () => timers.current.forEach(clearTimeout), [])
   const onPaid = () => {
     for (const ms of [5_000, 30_000]) {
-      timers.current.push(setTimeout(() => {
+      timers.current.push(setTimeout(async () => {
+        try {
+          await refreshWalletStatus()
+        } catch {
+          // The summary below still re-reads; the next tick or Refresh retries.
+        }
         queryClient.invalidateQueries({ queryKey: SUMMARY_KEY })
         queryClient.invalidateQueries({ queryKey: ['wallet', 'invoices'] })
       }, ms))
@@ -99,6 +110,14 @@ export default function WalletPage() {
         <div className="mb-3 rounded-md border border-[rgb(var(--violet-rgb)/0.3)] bg-[rgb(var(--violet-rgb)/0.06)] px-3 py-2 text-xs text-muted-foreground">
           Preview: this is what the client&rsquo;s login sees (once WALLET_CLIENT_USERS includes it). Nothing here is clickable that they couldn&rsquo;t click.
         </div>
+      )}
+      {!client && summary.config_problems?.length > 0 && (
+        <div className="mb-3"><ErrorBox>
+          <p className="font-medium">Billing is misconfigured: bundles are being counted but not charged.</p>
+          <ul className="mt-1 list-disc pl-5">
+            {summary.config_problems.map(problem => <li key={problem}>{problem}</li>)}
+          </ul>
+        </ErrorBox></div>
       )}
       <StatusStrip summary={summary} onRefresh={() => refresh.mutate()} refreshing={refresh.isPending} client={client} />
       <StatCards summary={summary} client={client} />
